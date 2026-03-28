@@ -1,0 +1,87 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+@theme {
+  --color-primary: #2563EB;
+  --color-secondary: #64748B;
+  --color-accent: #1D4ED8;
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  
+  --font-display: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 10px 40px -15px rgba(0,0,0,0.08);
+}
+
+@layer base {
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-body);
+    background-color: #F8FAFC;
+    color: #1E293B;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: #2563EB;
+    color: white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: #0F172A;
+  }
+}
+
+@layer components {
+  .pro-card {
+    background: white;
+    border: 1px solid #E2E8F0;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .pro-card:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
+  }
+
+  .pro-heading {
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: #0F172A;
+    letter-spacing: -0.04em;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-primary text-white rounded-xl font-semibold shadow-md hover:bg-accent transition-all active:scale-95;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition-all;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
