@@ -80,10 +80,42 @@ const Dashboard = () => {
     return { color: 'text-success', bg: 'bg-success/5', border: 'border-success/10', icon: <CheckCircle2 size={16} /> };
   };
 
+  const getInsightContent = (score, risk) => {
+    if (score >= 80) {
+      if (risk === 'High') return { 
+        heading: "High Output, High Cost", 
+        text: "You're achieving a lot, but your overhead is dangerous. Prioritize 15-minute disconnects to prevent a crash."
+      };
+      return {
+        heading: "You're in Peak Flow",
+        text: "Your productivity is exceptional and your recovery is optimal. This is your golden zone—maintain these rituals."
+      };
+    } else if (score >= 50) {
+      if (risk === 'High' || risk === 'Medium') return {
+        heading: "Warning Signs Detected",
+        text: "Efficiency is moderate, but burnout markers are rising. Consider ending your day early to recharge."
+      };
+      return {
+        heading: "Steady & Sustainable",
+        text: "You're maintaining a healthy, balanced output. There's room to scale up deep focus sessions if needed."
+      };
+    } else {
+      if (risk === 'High') return {
+        heading: "System Overload",
+        text: "Critical burnout risk detected alongside low output. Stop all deep work and prioritize sleep immediately."
+      };
+      return {
+        heading: "Recovery in Progress",
+        text: "Output is low today, but your risk is managed. Use this time for low-intensity admin or planning."
+      };
+    }
+  };
+
   const risk = getRiskStatus(data.latest.burnoutRisk);
+  const insight = getInsightContent(data.latest.productivityScore, data.latest.burnoutRisk);
 
   return (
-    <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto animate-fade-in">
+    <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto animate-fade-in text-[#111827]">
       {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
         <div>
@@ -126,11 +158,11 @@ const Dashboard = () => {
            </div>
            <div className="flex-1">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 text-primary text-xs font-bold mb-4">
-                <TrendingUp size={14} /> Today's Insight
+                <Zap size={14} /> Today's Insight
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">You're performing at your peak</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">{insight.heading}</h3>
               <p className="text-slate-500 leading-relaxed mb-6">
-                Based on your latest logs, your productivity is looking strong. Your focus levels and recovery are currently in optimal balance.
+                {insight.text}
               </p>
               <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${risk.bg} ${risk.color} ${risk.border}`}>
                  {risk.icon}
