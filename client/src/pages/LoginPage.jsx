@@ -16,7 +16,8 @@ const LoginPage = () => {
             navigate('/dashboard');
         } catch (err) {
             console.error(err);
-            alert('Login failed. Please check your credentials.');
+            const errorMessage = err.response?.data?.error || err.message || 'Login failed. Please check your credentials.';
+            alert(`Login failed: ${errorMessage}`);
         }
     };
 

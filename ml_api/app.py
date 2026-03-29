@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import traceback
 import sys
 import os
@@ -12,6 +13,7 @@ except ImportError:
     from pulse_api import PulseAPI
 
 app = Flask(__name__)
+CORS(app) # Enable CORS for all routes
 
 # Initialize API once at startup
 try:
@@ -21,6 +23,17 @@ try:
 except Exception as e:
     print(f"Error loading models: {str(e)}")
     MODELS_LOADED = False
+
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({
+        "status": "online",
+        "message": "PULSE ML Engine is running.",
+        "endpoints": {
+            "health": "/health",
+            "predict": "/predict [POST]"
+        }
+    }), 200
 
 @app.route('/health', methods=['GET'])
 def health():

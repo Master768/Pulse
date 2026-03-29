@@ -91,6 +91,7 @@ Before starting, ensure you have the following:
    | `FLASK_API_URL` | Live Flask URL from Step 3 | `https://pulse-ml-api.onrender.com/predict` |
    | `PORT` | Server port | `8080` |
    | `NODE_ENV` | Environment flag | `production` |
+| `FRONTEND_URL` | Vercel Production URL | `https://pulse-app.vercel.app` |
 
 **Verification**: Test with a tool like Postman or the live URL.
 - Expected: `GET https://pulse-backend.onrender.com/api/predictions/latest` returns `401 Unauthorized` (indicating auth is working).
@@ -110,7 +111,7 @@ Before starting, ensure you have the following:
    - **Framework Preset**: `Vite` (or Create React App if using that).
    - **Root Directory**: `client`
 4. **Environment Variables**:
-   - `VITE_API_URL`: `https://pulse-backend.onrender.com`
+   - `   `: `https://pulse-backend.onrender.com`
 5. Click **Deploy**.
 
 **Verification**: Visit your Vercel URL (e.g., `pulse-app.vercel.app`).

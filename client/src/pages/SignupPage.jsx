@@ -16,7 +16,8 @@ const SignupPage = () => {
             navigate('/onboarding');
         } catch (err) {
             console.error(err);
-            alert('Signup failed. Please try again.');
+            const errorMessage = err.response?.data?.error || err.message || 'Signup failed. Please try again.';
+            alert(`Signup failed: ${errorMessage}`);
         }
     };
 
