@@ -33,11 +33,11 @@ const Navbar = () => {
 
   const Brand = () => (
     <Link to={isAuthenticated ? "/dashboard" : "/"} className="flex items-center gap-2 group">
-      <div className="p-1.5 bg-primary text-white rounded-lg shadow-sm group-hover:bg-accent transition-colors">
-        <Zap size={20} fill="currentColor" />
+      <div className="p-2 bg-primary text-white rounded-xl shadow-md group-hover:bg-accent transition-all duration-300 transform group-hover:scale-110">
+        <Zap size={22} fill="white" />
       </div>
-      <span className="text-xl font-bold tracking-tight text-slate-900 font-display">
-        PULSE<span className="text-primary">.</span>
+      <span className="text-2xl font-extrabold tracking-tight text-[#111827] font-display">
+        PULSE
       </span>
     </Link>
   );

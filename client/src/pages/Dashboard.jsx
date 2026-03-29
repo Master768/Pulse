@@ -105,7 +105,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         
         {/* Core Productivity Card */}
-        <div className="md:col-span-8 pro-card rounded-3xl p-8 flex flex-col md:flex-row items-center gap-10">
+        <div className="md:col-span-8 pro-card rounded-3xl p-8 flex flex-col md:flex-row items-center gap-10 border border-slate-100/50 shadow-sm">
            <div className="relative w-56 h-56 flex-shrink-0">
               <svg className="w-full h-full transform -rotate-90">
                  <circle cx="50%" cy="50%" r="90" className="stroke-current text-slate-50" strokeWidth="16" fill="none" />
@@ -139,27 +139,27 @@ const Dashboard = () => {
            </div>
         </div>
 
-        {/* Persona Card */}
-        <div className="md:col-span-4 bg-slate-900 text-white rounded-3xl p-8 flex flex-col justify-between shadow-lg relative overflow-hidden group">
-           <div className="relative z-10">
-              <div className="flex justify-between items-start mb-10">
-                 <div className="p-3 bg-white/10 rounded-xl"><Sparkles size={24} className="text-amber-400" /></div>
-                 <span className="text-[10px] font-bold uppercase tracking-widest text-white/40 italic">System Profile</span>
-              </div>
-              <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Performance Style</p>
-              <h2 className="text-3xl font-bold text-white mb-6 leading-tight">
-                {data.latest.persona || 'Steady Performer'}
-              </h2>
-              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                 <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: "70%" }}
-                    className="h-full bg-primary" 
-                 />
-              </div>
-           </div>
-           <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-primary/20 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
-        </div>
+         {/* Persona Card */}
+         <div className="md:col-span-4 bg-white rounded-[2.5rem] p-8 flex flex-col justify-between shadow-card relative overflow-hidden group border border-primary/10" style={{ backgroundColor: '#ffffff' }}>
+            <div className="relative z-10">
+               <div className="flex justify-between items-start mb-10">
+                  <div className="p-3 bg-primary/10 text-primary rounded-2xl shadow-sm group-hover:bg-primary group-hover:text-white transition-all duration-300"><Sparkles size={24} /></div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 opacity-70">System Profile</span>
+               </div>
+               <p className="text-[10px] font-extrabold text-[#111827] uppercase tracking-[0.2em] mb-2 opacity-60">Performance Style</p>
+               <h2 className="text-3xl font-extrabold text-[#111827] mb-6 leading-tight">
+                 {data.latest.persona || 'Steady Performer'}
+               </h2>
+               <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100/50">
+                  <motion.div 
+                     initial={{ width: 0 }}
+                     animate={{ width: "70%" }}
+                     className="h-full bg-primary rounded-full" 
+                  />
+               </div>
+            </div>
+            <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+         </div>
 
         {/* Factors Summary */}
         <div className="md:col-span-8 pro-card rounded-3xl p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -209,15 +209,15 @@ const Dashboard = () => {
                  <AreaChart data={data.summary.trends.slice(-7)}>
                     <defs>
                       <linearGradient id="chartColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#2D7D72" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#2D7D72" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <Area 
                       type="monotone" 
                       dataKey="productivityScore" 
-                      stroke="#2563EB" 
-                      strokeWidth={2} 
+                      stroke="#2D7D72" 
+                      strokeWidth={3} 
                       fill="url(#chartColor)" 
                     />
                  </AreaChart>

@@ -16,11 +16,11 @@ const LandingPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-full text-xs font-bold mb-8">
-              <Sparkles size={16} /> NEW: PERFORMANCE INSIGHTS V2
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-bold mb-8">
+              <Sparkles size={16} /> NEW: ML-Driven Burnout Prediction
             </div>
-            <h1 className="text-6xl md:text-7xl font-bold text-slate-900 tracking-tight mb-8 leading-[1.05]">
-              Master your productivity<br /><span className="text-primary">with biological intelligence.</span>
+            <h1 className="text-6xl md:text-7xl font-extrabold text-[#111827] tracking-tight mb-8 leading-[1.05]">
+              Master Your Productivity,<br />Predict Your <span className="text-accent italic">Balance.</span>
             </h1>
             <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-12">
               Our biological intelligence model analyzes your core metrics to help you reclaim focus and optimize your daily rhythm.

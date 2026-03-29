@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
-  Calendar, Filter, Download, Activity, TrendingUp, Info, Search
+  Calendar, Filter, Download, Activity, TrendingUp, Info, Search, LayoutGrid
 } from 'lucide-react';
 import api from '../utils/api';
 
@@ -101,54 +101,89 @@ const Reports = () => {
               <h3 className="text-xl font-bold text-slate-900">30-Day Productivity Index</h3>
               <div className="flex items-center gap-2">
                  <div className="w-3 h-3 rounded-full bg-primary" />
+                 <div className="w-3 h-3 rounded-full bg-[#2D7D72]" />
                  <span className="text-xs font-bold text-slate-400 uppercase">Productivity</span>
               </div>
            </div>
            <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                  <AreaChart data={data}>
-                    <defs>
-                      <linearGradient id="colorProd" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis 
-                       dataKey="date" 
-                       axisLine={false} 
-                       tickLine={false} 
-                       tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 600}} 
-                       tickFormatter={(str) => new Date(str).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                    />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 600}} />
-                    <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
-                    <Area type="monotone" dataKey="productivityScore" stroke="#2563EB" strokeWidth={3} fill="url(#colorProd)" />
+                     <defs>
+                       <linearGradient id="colorProd" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor="#2D7D72" stopOpacity={0.1}/>
+                         <stop offset="95%" stopColor="#2D7D72" stopOpacity={0}/>
+                       </linearGradient>
+                     </defs>
+                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                     <XAxis 
+                        dataKey="date" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} 
+                        tickFormatter={(str) => new Date(str).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                     />
+                     <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} />
+                     <Tooltip 
+                        contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)', padding: '12px'}} 
+                        itemStyle={{fontWeight: 700, color: '#2D7D72'}}
+                        formatter={(value) => [`${Math.round(value)}%`, 'Productivity']}
+                        labelFormatter={(label) => `Date: ${label}`}
+                     />
+                     <Area type="monotone" dataKey="productivityScore" stroke="#2D7D72" strokeWidth={4} fill="url(#colorProd)" />
                  </AreaChart>
               </ResponsiveContainer>
            </div>
         </div>
 
-        <div>
-           <h3 className="text-2xl font-bold text-slate-900 mb-8">Detailed History</h3>
+        <div className="pro-card rounded-[2.5rem] p-10">
+           <div className="flex items-center gap-3 mb-10">
+              <div className="p-3 bg-[#F0E7FF] text-[#A855F7] rounded-xl font-bold">
+                 <LayoutGrid size={24} />
+              </div>
+              <h3 className="text-xl font-extrabold text-[#111827] uppercase tracking-[0.2em]">Historical Logs</h3>
+           </div>
+           
+           <div className="hidden md:grid grid-cols-5 px-6 mb-6 text-[10px] font-extrabold text-slate-600 uppercase tracking-[0.2em] opacity-60">
+              <span>Date</span>
+              <span className="text-center">Status</span>
+              <span className="text-center">Productivity</span>
+              <span className="text-center">Persona</span>
+              <span className="text-right">Actions</span>
+           </div>
+
            <div className="space-y-4">
               {data?.slice(0, 10).map((item, i) => (
-                 <div key={i} className="pro-card p-6 rounded-2xl flex items-center justify-between hover:border-primary/20 transition-all cursor-pointer">
-                    <div className="flex items-center gap-8">
-                       <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date</p>
-                          <p className="text-base font-bold text-slate-900">{new Date(item.date).toLocaleDateString()}</p>
-                       </div>
-                       <div className="h-8 w-px bg-slate-100" />
-                       <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Risk</p>
-                          <span className={`text-xs font-bold ${item.burnoutRisk === 'High' ? 'text-red-500' : 'text-green-500'}`}>{item.burnoutRisk}</span>
-                       </div>
+                 <div key={i} className="group p-6 rounded-3xl flex flex-col md:grid md:grid-cols-5 items-center gap-4 hover:bg-[#F9FAFB] transition-all cursor-pointer border border-transparent hover:border-slate-100">
+                    <span className="text-sm font-bold text-[#111827]">{new Date(item.date).toLocaleDateString()}</span>
+                    
+                    <div className="flex flex-col items-center">
+                       <span className={`px-3 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-widest ${
+                          item.burnoutRisk === 'High' ? 'bg-[#FEE2E2] text-[#991B1B]' : 
+                          item.burnoutRisk === 'Medium' ? 'bg-[#FEF3C7] text-[#92400E]' : 
+                          'bg-[#DCFCE7] text-[#166534]'
+                       }`}>
+                          {item.burnoutRisk} Risk
+                       </span>
+                       {item.isEdited && (
+                          <div className="mt-1.5 flex items-center gap-1 text-[9px] font-extrabold text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded-full border border-primary/20">
+                             <Clock size={10} /> Edited
+                          </div>
+                       )}
                     </div>
-                    <div className="text-right flex items-center gap-8">
-                       <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Score</p>
-                          <p className="text-2xl font-bold text-primary tracking-tight">{item.productivityScore}%</p>
+
+                    <div className="text-center">
+                       <span className="text-xl font-extrabold text-[#111827]">
+                          {Math.round(item.productivityScore)}%
+                       </span>
+                    </div>
+
+                    <div className="text-center">
+                       <span className="text-sm font-bold text-slate-600">{item.persona || 'Steady'}</span>
+                    </div>
+
+                    <div className="w-full flex justify-end">
+                       <div className="p-2 text-slate-300 group-hover:text-slate-400 transition-colors">
+                          <Search size={18} />
                        </div>
                     </div>
                  </div>

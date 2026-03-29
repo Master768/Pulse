@@ -18,11 +18,11 @@ const Settings = lazy(() => import('./pages/Settings'));
 const FocusTimerPage = lazy(() => import('./pages/FocusTimerPage'));
 
 const LoadingFallback = () => (
-  <div className="pt-32 flex items-center justify-center min-h-screen bg-white">
+  <div className="pt-32 flex items-center justify-center min-h-screen bg-[#F8FBFB]">
     <motion.div 
       animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
       transition={{ duration: 1.5, repeat: Infinity }}
-      className="w-12 h-12 bg-electric rounded-2xl shadow-vibrant" 
+      className="w-12 h-12 bg-primary rounded-3xl shadow-lg" 
     />
   </div>
 );
@@ -32,7 +32,7 @@ function App() {
     <AuthProvider>
       <TimerProvider>
         <Router>
-          <div className="min-h-screen bg-white font-dm">
+          <div className="min-h-screen bg-[#F8FBFB] font-body">
           <Navbar />
           <main>
             <Suspense fallback={<LoadingFallback />}>

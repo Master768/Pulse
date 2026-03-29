@@ -64,6 +64,10 @@ const predictionSchema = new mongoose.Schema({
     cluster_size: { type: Number },
     is_available: { type: Boolean, default: false }
   },
+  isEdited: {
+    type: Boolean,
+    default: false
+  },
   date: {
     type: Date,
     required: [true, 'Date is required'],

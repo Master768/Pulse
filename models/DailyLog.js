@@ -114,13 +114,18 @@ const dailyLogSchema = new mongoose.Schema({
     type: Boolean,
     required: [function() { return this.is_completed; }, 'isWeekend flag is required'],
     default: false
+  },
+  dayKey: {
+    type: String,
+    required: [true, 'Day key is required for uniqueness'],
+    index: true
   }
 }, {
   timestamps: true
 });
 
-// Composite index for efficient user-date lookups
-dailyLogSchema.index({ userId: 1, date: -1 });
+// Enforce strictly one log per user per local day key
+dailyLogSchema.index({ userId: 1, dayKey: 1 }, { unique: true });
 
 // Ensure unique log per user per day (Simple date check)
 // This would need more refinement in a production pre-save hook 

@@ -14,16 +14,27 @@ const createLog = async (req, res, next) => {
       socialMediaMins, date, dayOfWeek, isWeekend 
     } = req.body;
 
-    // 1. Save or Update Daily Log
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // 1. Save or Update Daily Log (Strict DayKey-Based Matching with Legacy Date Fallback)
+    const logDate = date ? new Date(date) : new Date();
+    // Normalize to YYYY-MM-DD for the unique dayKey
+    const dayKey = req.body.dayKey || logDate.toISOString().split('T')[0];
 
-    let log = await DailyLog.findOne({
+    // Find all logs for this day to handle existing duplicates (Legacy & DayKey)
+    const dayStart = new Date(logDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    let existingLogs = await DailyLog.find({
       userId: req.user.id,
-      date: { $gte: today, $lt: tomorrow }
-    });
+      $or: [
+        { dayKey }, // Standard (Newer records)
+        { date: { $gte: dayStart, $lte: dayEnd } } // Legacy (Older records without dayKey)
+      ]
+    }).sort({ updatedAt: -1 });
+
+    let log;
+    let wasAlreadyPresent = false;
 
     const updateData = {
       sleepHours,
@@ -38,16 +49,26 @@ const createLog = async (req, res, next) => {
       socialMediaMins,
       dayOfWeek,
       isWeekend,
+      dayKey, // Always ensure dayKey is set now
       is_completed: true
     };
 
-    if (log) {
+    if (existingLogs.length > 0) {
+      log = existingLogs[0];
+      wasAlreadyPresent = true;
       Object.assign(log, updateData);
       await log.save();
+
+      // CLEANUP: If there were duplicates (Legacy or previous bug), remove the older ones
+      if (existingLogs.length > 1) {
+        const idsToCleanup = existingLogs.slice(1).map(l => l._id);
+        await DailyLog.deleteMany({ _id: { $in: idsToCleanup } });
+        await Prediction.deleteMany({ logId: { $in: idsToCleanup } });
+      }
     } else {
       log = await DailyLog.create({
         userId: req.user.id,
-        date: date || new Date(),
+        date: logDate,
         ...updateData
       });
     }
@@ -102,20 +123,24 @@ const createLog = async (req, res, next) => {
       persona, cluster_id, top_positive_factors, top_negative_factors 
     } = mlResponse.data.data;
 
-    // 4. Save Prediction
-    const prediction = await Prediction.create({
-      userId: req.user.id,
-      logId: log._id,
-      productivityScore: productivity_score,
-      burnoutRisk: burnout_risk,
-      burnoutConfidence: burnout_confidence_scores,
-      primaryConfidence: burnout_confidence_scores[burnout_risk],
-      persona,
-      clusterId: cluster_id,
-      topPositiveFactors: top_positive_factors,
-      topNegativeFactors: top_negative_factors,
-      date: log.date
-    });
+    // 4. Save/Update Prediction (Upsert) - Rounding Score for consistency
+    const prediction = await Prediction.findOneAndUpdate(
+      { logId: log._id },
+      {
+        userId: req.user.id,
+        productivityScore: Math.round(productivity_score), // ROUND SCORE
+        burnoutRisk: burnout_risk,
+        burnoutConfidence: burnout_confidence_scores,
+        primaryConfidence: burnout_confidence_scores[burnout_risk],
+        persona,
+        clusterId: cluster_id,
+        topPositiveFactors: top_positive_factors,
+        topNegativeFactors: top_negative_factors,
+        isEdited: wasAlreadyPresent,
+        date: log.date
+      },
+      { upsert: true, new: true }
+    );
 
 
     res.status(201).json({
