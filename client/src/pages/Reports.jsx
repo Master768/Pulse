@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
-  Calendar, Filter, Download, Activity, TrendingUp, Info, Search, LayoutGrid
+  Calendar, Filter, Download, Activity, TrendingUp, Info, Search, LayoutGrid, Clock
 } from 'lucide-react';
 import api from '../utils/api';
 
