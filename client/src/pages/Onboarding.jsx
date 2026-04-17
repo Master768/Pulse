@@ -1,3 +1,14 @@
+/**
+ * ONBOARDING PAGE
+ * 
+ * This is a multi-step "Wizard" that collects the user's baseline data 
+ * after they sign up. This data is critical for calibrating the ML models.
+ * Steps:
+ * 1. PERSONAL: Basic identity and professional context.
+ * 2. GOALS: Productivity and health targets (Sleep, Screen Time).
+ * 3. COMPLETE: Final confirmation and dashboard transition.
+ */
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -8,16 +19,22 @@ import {
 } from 'lucide-react';
 
 const Onboarding = () => {
-  const [step, setStep] = useState(1);
-  const [direction, setDirection] = useState(0);
+  // --- STATE ---
+  const [step, setStep] = useState(1); // Current wizard page
+  const [direction, setDirection] = useState(0); // Animation direction (1 for forward, -1 for back)
   const [formData, setFormData] = useState({
-    name: '', age: '', occupation: '',
-    sleepGoal: 8, screenLimit: 4, focusTarget: 3,
+    name: '', 
+    age: '', 
+    occupation: '',
+    sleepGoal: 8, 
+    screenLimit: 4, 
+    focusTarget: 3,
     mainGoal: 'productivity'
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // --- NAVIGATION HANDLERS ---
   const handleNext = () => {
     setDirection(1);
     setStep(s => s + 1);
@@ -28,14 +45,20 @@ const Onboarding = () => {
     setStep(s => s - 1);
   };
 
+  /**
+   * FINAL SUBMISSION
+   * Saves the onboarding profile to the database and marks onboarding as complete.
+   */
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      // We use PATCH because the user record already exists (created at signup); 
+      // we are just filling in the missing pulse profile data.
       await api.patch('/auth/onboarding', { ...formData, onboardingComplete: true });
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
-      navigate('/dashboard');
+      navigate('/dashboard'); // Fallback if patch fails
     } finally {
       setLoading(false);
     }
@@ -47,6 +70,10 @@ const Onboarding = () => {
     { title: "Complete", icon: <CheckCircle2 size={18} /> }
   ];
 
+  /**
+   * ANIMATION VARIANTS
+   * Controls the "sliding" effect as the user moves between steps.
+   */
   const variants = {
     enter: (direction) => ({ x: direction > 0 ? 20 : -20, opacity: 0 }),
     center: { x: 0, opacity: 1 },
@@ -56,12 +83,14 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-slate-50 pt-32 pb-24 px-6">
       <div className="max-w-3xl mx-auto">
-        {/* Progress Stepper */}
+        
+        {/* PROGRESS STEPPER: Visual indicator of current progress */}
         <div className="mb-12">
            <div className="flex justify-between items-center mb-4">
               <span className="text-xs font-bold text-primary uppercase tracking-wider">Step {step} of 3</span>
               <span className="text-xs font-bold text-slate-400">{Math.round((step/3)*100)}% Complete</span>
            </div>
+           {/* Progress Bar */}
            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
@@ -70,6 +99,7 @@ const Onboarding = () => {
               />
            </div>
            
+           {/* Step Icons */}
            <div className="mt-8 flex justify-between">
               {steps.map((s, i) => (
                 <div key={i} className={`flex items-center gap-2 transition-all duration-300 ${step >= i + 1 ? 'opacity-100' : 'opacity-40'}`}>
@@ -82,14 +112,16 @@ const Onboarding = () => {
            </div>
         </div>
 
-        {/* Content Wizard */}
+        {/* CONTENT WIZARD: Dynamic section based on current step */}
         <div className="pro-card rounded-3xl p-8 md:p-12 min-h-[500px] flex flex-col justify-between">
           <div className="relative overflow-hidden">
             <AnimatePresence mode="wait" custom={direction}>
+              
+              {/* STEP 1: PERSONAL INFO */}
               {step === 1 && (
                 <motion.div 
-                  key="step1" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
-                  transition={{ duration: 0.4 }} className="space-y-10"
+                   key="step1" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
+                   transition={{ duration: 0.4 }} className="space-y-10"
                 >
                   <div>
                     <h2 className="text-3xl font-bold text-slate-900 mb-4">Tell us about yourself</h2>
@@ -109,10 +141,11 @@ const Onboarding = () => {
                 </motion.div>
               )}
 
+              {/* STEP 2: GOALS & BENCHMARKS */}
               {step === 2 && (
                 <motion.div 
-                  key="step2" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
-                  transition={{ duration: 0.4 }} className="space-y-10"
+                   key="step2" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
+                   transition={{ duration: 0.4 }} className="space-y-10"
                 >
                   <div>
                     <h2 className="text-3xl font-bold text-slate-900 mb-4">Set your goals</h2>
@@ -139,10 +172,11 @@ const Onboarding = () => {
                 </motion.div>
               )}
 
+              {/* STEP 3: SUCCESS & COMPLETION */}
               {step === 3 && (
                 <motion.div 
-                  key="step3" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
-                  transition={{ duration: 0.4 }} className="text-center py-10"
+                   key="step3" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
+                   transition={{ duration: 0.4 }} className="text-center py-10"
                 >
                   <div className="inline-flex p-8 bg-success/10 text-success rounded-3xl mb-8">
                      <CheckCircle2 size={64} />
@@ -163,6 +197,7 @@ const Onboarding = () => {
             </AnimatePresence>
           </div>
 
+          {/* Stepper Controls */}
           {step < 3 && (
             <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center">
                <button onClick={handleBack} disabled={step === 1} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-900 disabled:opacity-0 transition-all">
@@ -179,4 +214,4 @@ const Onboarding = () => {
   );
 };
 
-export default Onboarding;
+export default Onboarding;

@@ -1,3 +1,13 @@
+/**
+ * SIGNUP PAGE
+ * 
+ * This page handles new user registration.
+ * Layout:
+ * - Left: "Why Pulse?" value proposition with persistent feature highlights.
+ * - Right: Registration form for Name, Email, and Password.
+ * Transition: Upon success, users are moved to /onboarding to calibrate their metrics.
+ */
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -5,16 +15,24 @@ import { motion } from 'framer-motion';
 import { Zap, Mail, Lock, User, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const SignupPage = () => {
+    // --- STATE ---
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-    const { signup } = useAuth();
+    const { signup } = useAuth(); // Grab the signup orchestration from Context
     const navigate = useNavigate();
 
+    /**
+     * REGISTRATION HANDLER
+     */
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // 1. Send data to the backend /auth/signup route
             await signup(formData.name, formData.email, formData.password);
+            
+            // 2. REDIRECT: New users must go through onboarding first
             navigate('/onboarding');
         } catch (err) {
+            // 3. ERROR: Catch email collision or validation issues
             console.error(err);
             const errorMessage = err.response?.data?.error || err.message || 'Signup failed. Please try again.';
             alert(`Signup failed: ${errorMessage}`);
@@ -23,7 +41,8 @@ const SignupPage = () => {
 
     return (
         <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white">
-            {/* Left Side: Value Prop */}
+            
+            {/* --- LEFT SIDE: VALUE PROPOSITION (Desktop Only) --- */}
             <div className="hidden lg:flex flex-col justify-between bg-slate-900 p-20 relative overflow-hidden">
                 <div className="relative z-10">
                     <Link to="/" className="flex items-center gap-2 text-white mb-32">
@@ -34,6 +53,7 @@ const SignupPage = () => {
                         Build your<br />productivity<br /><span className="text-primary">Masterclass.</span>
                     </h2>
                     
+                    {/* Feature Checklist */}
                     <div className="space-y-8">
                         {[
                           "Analyze daily productivity markers",
@@ -52,7 +72,7 @@ const SignupPage = () => {
                 <div className="absolute -bottom-32 -left-32 w-96 h-96 opacity-30 bg-[radial-gradient(circle_at_center,#2563EB_0%,transparent_70%)]" />
             </div>
 
-            {/* Right Side: Form */}
+            {/* --- RIGHT SIDE: SIGNUP FORM --- */}
             <div className="flex flex-col justify-center p-8 md:p-24 lg:p-32 bg-slate-50">
                 <div className="max-w-md w-full mx-auto">
                     <div className="mb-12">
@@ -61,6 +81,7 @@ const SignupPage = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Name Input */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Full Name</label>
                             <div className="relative">
@@ -75,6 +96,7 @@ const SignupPage = () => {
                             </div>
                         </div>
 
+                        {/* Email Input */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Email Address</label>
                             <div className="relative">
@@ -89,6 +111,7 @@ const SignupPage = () => {
                             </div>
                         </div>
 
+                        {/* Password Input */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Create Password</label>
                             <div className="relative">
@@ -121,4 +144,4 @@ const SignupPage = () => {
     );
 };
 
-export default SignupPage;
+export default SignupPage;

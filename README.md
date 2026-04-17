@@ -1,6 +1,8 @@
 # 🧠 PULSE — Personal Performance Intelligence System
 
 > **Comprehensive Technical Documentation v2.0**
+> 
+> 📘 **[NEW] MASTER ARCHITECTURE MAP**: For a full-stack connectivity diagram, detailed file structure breakdown, and request lifecycle trace, please see **[MASTER_ARCHITECTURE_MAP.md](file:///c:/Users/Ravin/OneDrive/Desktop/pulse/MASTER_ARCHITECTURE_MAP.md)**.
 
 ---
 

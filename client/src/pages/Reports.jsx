@@ -1,3 +1,13 @@
+/**
+ * REPORTS PAGE
+ * 
+ * This page provides a deep-dive into the user's historical performance.
+ * It includes:
+ * 1. PRODUCTIVITY INDEX: A large AreaChart showing score trends over time.
+ * 2. HISTORICAL LOGS: A detailed list of every daily entry with risk markers.
+ * 3. DATA EXPORT: Allows users to download their performance history in CSV format.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -9,16 +19,21 @@ import {
 import api from '../utils/api';
 
 const Reports = () => {
+  // --- STATE ---
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * DATA FETCHING
+   * Retrieves the entire history of productivity predictions for the user.
+   */
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         const res = await api.get('/predictions/history');
         setData(res.data.data);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch history:", err);
       } finally {
         setLoading(false);
       }
@@ -26,13 +41,17 @@ const Reports = () => {
     fetchHistory();
   }, []);
 
+  /**
+   * EXPORT ENGINE
+   * Generates a CSV file from the performance data and triggers a browser download.
+   */
   const handleExportCSV = () => {
     if (!data || data.length === 0) return;
     
-    // Headers
+    // 1. Define Column Headers
     const headers = ['Date', 'Productivity Score (%)', 'Burnout Risk', 'Persona'];
     
-    // Rows
+    // 2. Format Data Rows
     const rows = data.map(item => [
       new Date(item.date).toLocaleDateString(),
       item.productivityScore,
@@ -40,13 +59,13 @@ const Reports = () => {
       item.persona || 'N/A'
     ]);
     
-    // Combine
+    // 3. Assemble CSV Content
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.join(','))
     ].join('\n');
     
-    // Download
+    // 4. Trigger Download via Blob
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -57,6 +76,7 @@ const Reports = () => {
     document.body.removeChild(link);
   };
 
+  // 1. LOADING STATE
   if (loading) return (
     <div className="pt-32 flex items-center justify-center min-h-screen bg-slate-50">
       <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -65,6 +85,7 @@ const Reports = () => {
 
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto animate-fade-in">
+      {/* --- PAGE HEADER --- */}
       <div className="flex flex-col md:flex-row justify-between items-start mb-12 gap-6">
         <div>
            <p className="text-sm font-bold text-primary uppercase tracking-wider mb-2">Analytics</p>
@@ -81,7 +102,9 @@ const Reports = () => {
         </div>
       </div>
 
+      {/* --- CONTENT AREA --- */}
       {(!data || data.length === 0) ? (
+        /* EMPTY STATE: Shown if the user hasn't logged enough days yet */
         <div className="pro-card p-12 rounded-3xl text-center flex flex-col items-center justify-center max-w-2xl mx-auto mt-12">
           <div className="w-24 h-24 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-sm">
              <Calendar size={48} strokeWidth={1.5} />
@@ -95,7 +118,9 @@ const Reports = () => {
           </button>
         </div>
       ) : (
+      /* DATA VIEW: The main analytics dashboard */
       <div className="grid grid-cols-1 gap-12">
+        {/* BIG CHART: 30-Day Productivity Index */}
         <div className="pro-card rounded-3xl p-10">
            <div className="flex justify-between items-center mb-10">
               <h3 className="text-xl font-bold text-slate-900">30-Day Productivity Index</h3>
@@ -135,6 +160,7 @@ const Reports = () => {
            </div>
         </div>
 
+        {/* LOG LIST: Detailed historical view */}
         <div className="pro-card rounded-[2.5rem] p-10">
            <div className="flex items-center gap-3 mb-10">
               <div className="p-3 bg-[#F0E7FF] text-[#A855F7] rounded-xl font-bold">
@@ -143,6 +169,7 @@ const Reports = () => {
               <h3 className="text-xl font-extrabold text-[#111827] uppercase tracking-[0.2em]">Historical Logs</h3>
            </div>
            
+           {/* Table Headers */}
            <div className="hidden md:grid grid-cols-5 px-6 mb-6 text-[10px] font-extrabold text-slate-600 uppercase tracking-[0.2em] opacity-60">
               <span>Date</span>
               <span className="text-center">Status</span>
@@ -157,6 +184,7 @@ const Reports = () => {
                     <span className="text-sm font-bold text-[#111827]">{new Date(item.date).toLocaleDateString()}</span>
                     
                     <div className="flex flex-col items-center">
+                       {/* Color-coded risk badge */}
                        <span className={`px-3 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-widest ${
                           item.burnoutRisk === 'High' ? 'bg-[#FEE2E2] text-[#991B1B]' : 
                           item.burnoutRisk === 'Medium' ? 'bg-[#FEF3C7] text-[#92400E]' : 

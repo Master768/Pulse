@@ -1,3 +1,16 @@
+/**
+ * FOCUS TIMER PAGE
+ * 
+ * This page provides a "Deep Work" environment for users.
+ * It integrates with the global TimerContext to track time and handles the 
+ * "Session Summary" logic once the user finishes.
+ * 
+ * Key Features:
+ * 1. VISUAL TIMER: A circular progress ring (SVG) showing remaining time.
+ * 2. SESSION SCORING: Automatically calculates "Focus Quality" based on duration and pauses.
+ * 3. BACKEND SYNC: Saves completed focus sessions to the database to influence ML models.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Square, AlertCircle, RefreshCcw, ArrowRight, Award, Zap } from 'lucide-react';
@@ -6,15 +19,22 @@ import api from '../utils/api';
 import { useTimer } from '../context/TimerContext';
 
 const FocusTimerPage = () => {
+  // --- TIMER CONTEXT ---
   const { 
     isActive, isPaused, activeSeconds, targetMinutes, setTargetMinutes, 
     isFinished, pauses, startTimer, pauseTimer, stopTimer, resetTimer 
   } = useTimer();
-  const [sessionSummary, setSessionSummary] = useState(null);
-  const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, success, missing_log, error
-  const [predictionResult, setPredictionResult] = useState(null);
+
+  // --- LOCAL STATE ---
+  const [sessionSummary, setSessionSummary] = useState(null); // Metadata about the session just ended
+  const [syncStatus, setSyncStatus] = useState('idle'); // Tracking the save-to-db process
+  const [predictionResult, setPredictionResult] = useState(null); // Real-time ML feedback after saving
   const navigate = useNavigate();
 
+  /**
+   * NAVIGATION GUARD
+   * Prevents accidental page exits during an active session (useful for long Pomodoros).
+   */
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (isActive || isPaused || (sessionSummary && syncStatus !== 'success')) {
@@ -27,23 +47,32 @@ const FocusTimerPage = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isActive, isPaused, sessionSummary, syncStatus]);
 
+  /**
+   * AUTOMATIC COMPLETION
+   * Triggers the summary view once the TimerContext signals the timer hit zero.
+   */
   useEffect(() => {
     if (isFinished && !sessionSummary && activeSeconds > 0) {
       handleStop();
     }
   }, [isFinished, sessionSummary, activeSeconds]);
 
+  /**
+   * SESSION SCORING Logic
+   * Calculates the 'Quality Score' based on how many times the user got distracted (paused).
+   */
   const handleStop = () => {
     stopTimer();
 
-    // Active minutes formulation
+    // 1. Calculate active minutes
     const durationMins = Math.max(0, Math.round(activeSeconds / 60)); 
     
-    // Quality Score Formula
+    // 2. Compute Quality Score (Scale 1-5)
+    // We start at 5 and deduct 0.6 for every pause.
     let quality = 5 - (pauses * 0.6);
     if (quality < 1) quality = 1;
 
-    // Distraction Level
+    // 3. Determine Distraction Label
     let distraction = 'None';
     if (pauses >= 2 && pauses <= 4) distraction = 'Mild';
     else if (pauses >= 5) distraction = 'Heavy';
@@ -56,6 +85,11 @@ const FocusTimerPage = () => {
     });
   };
 
+  /**
+   * BACKEND SYNCHRONIZATION
+   * Sends the focus session data to /logs/focus.
+   * Note: Requires a daily performance log for today to exist first.
+   */
   const handleSaveSession = async () => {
     setSyncStatus('syncing');
     try {
@@ -64,11 +98,12 @@ const FocusTimerPage = () => {
         focusQualityScore: sessionSummary.quality,
         distractionLevel: sessionSummary.distraction
       });
+      // The API returns the updated ML prediction after our session is added
       setPredictionResult(res.data.data.prediction);
       setSyncStatus('success');
     } catch (err) {
       if (err.response?.status === 400) {
-        setSyncStatus('missing_log');
+        setSyncStatus('missing_log'); // Error: User needs to log sleep/activity first
       } else {
         setSyncStatus('error');
       }
@@ -82,12 +117,14 @@ const FocusTimerPage = () => {
     resetTimer();
   };
 
+  // Helper to turn seconds into MM:SS
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
     const s = (secs % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
   };
 
+  // --- RENDER: SESSION SUMMARY VIEW ---
   if (sessionSummary) {
     return (
       <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto animate-fade-in flex flex-col items-center justify-center min-h-[80vh]">
@@ -100,6 +137,7 @@ const FocusTimerPage = () => {
             <h2 className="text-3xl font-bold text-slate-900 mb-2">Session Summary</h2>
             <p className="text-slate-500 mb-8">Ready to lock it in?</p>
             
+            {/* Summary Metrics */}
             <div className="grid grid-cols-2 gap-4 mb-8 text-left">
               <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Time</span>
@@ -126,6 +164,7 @@ const FocusTimerPage = () => {
               </div>
             </div>
             
+            {/* Sync Logic Rendering */}
             <div className="flex flex-col gap-3">
                {syncStatus === 'missing_log' ? (
                  <div className="space-y-4">
@@ -138,9 +177,9 @@ const FocusTimerPage = () => {
                  </div>
                ) : syncStatus === 'success' ? (
                  <motion.div 
-                   initial={{ opacity: 0, scale: 0.9 }} 
-                   animate={{ opacity: 1, scale: 1 }}
-                   className="p-6 bg-slate-900 text-white rounded-3xl border border-white/10 shadow-xl"
+                    initial={{ opacity: 0, scale: 0.9 }} 
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-6 bg-slate-900 text-white rounded-3xl border border-white/10 shadow-xl"
                  >
                     <div className="flex items-center gap-3 mb-4 text-left">
                        <div className="p-2 bg-primary rounded-lg text-white"><Zap size={20} /></div>
@@ -182,6 +221,7 @@ const FocusTimerPage = () => {
   const progress = activeSeconds / (targetMinutes * 60);
   const timeLeftSeconds = Math.max(0, targetMinutes * 60 - activeSeconds);
   
+  // --- RENDER: TIMER VIEW ---
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto animate-fade-in flex flex-col items-center justify-center min-h-[80vh]">
       <div className="pro-card rounded-3xl p-12 max-w-md w-full mx-auto text-center border-slate-100 shadow-2xl shadow-teal-500/5 relative">
@@ -191,6 +231,7 @@ const FocusTimerPage = () => {
            <p className="text-slate-500 text-sm max-w-[200px] mx-auto">Minimize distractions. Complete your Pomodoro interval.</p>
         </div>
         
+        {/* Interval Adjuster (Only visible before starting) */}
         {!isActive && activeSeconds === 0 && (
           <div className="flex items-center justify-center gap-4 mb-4">
              <button onClick={() => setTargetMinutes(Math.max(5, targetMinutes - 5))} className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold hover:bg-slate-200 transition-colors">-</button>
@@ -199,8 +240,9 @@ const FocusTimerPage = () => {
           </div>
         )}
         
+        {/* TIMER RING */}
         <div className="relative w-72 h-72 mx-auto mb-12 flex items-center justify-center">
-          {/* Background Circle */}
+          {/* Background SVG Circle */}
           <svg className="absolute inset-0 w-full h-full transform -rotate-90 drop-shadow-sm">
             <circle 
               cx="50%" cy="50%" r="130" 
@@ -222,31 +264,33 @@ const FocusTimerPage = () => {
           </svg>
           
           <div className="z-10 flex flex-col items-center">
+            {/* Countdown Text */}
             <motion.div 
-              key={activeSeconds}
-              initial={{ scale: 0.95, opacity: 0.8 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className={`text-7xl font-bold tracking-tighter ${isPaused ? 'text-amber-500' : 'text-slate-900'}`}
-              style={{ fontVariantNumeric: 'tabular-nums' }}
+               key={activeSeconds}
+               initial={{ scale: 0.95, opacity: 0.8 }}
+               animate={{ scale: 1, opacity: 1 }}
+               transition={{ duration: 0.2 }}
+               className={`text-7xl font-bold tracking-tighter ${isPaused ? 'text-amber-500' : 'text-slate-900'}`}
+               style={{ fontVariantNumeric: 'tabular-nums' }}
             >
-              {formatTime(timeLeftSeconds)}
+               {formatTime(timeLeftSeconds)}
             </motion.div>
             
             <AnimatePresence>
-              {pauses > 0 && (
-                <motion.span 
-                  initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  className="mt-4 flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-500 text-[10px] uppercase font-bold tracking-widest rounded-full"
-                >
-                  <AlertCircle size={14} /> Paused {pauses} time{pauses !== 1 && 's'}
-                </motion.span>
-              )}
+               {pauses > 0 && (
+                 <motion.span 
+                    initial={{ opacity: 0, y: 10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    className="mt-4 flex items-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-500 text-[10px] uppercase font-bold tracking-widest rounded-full"
+                 >
+                    <AlertCircle size={14} /> Paused {pauses} time{pauses !== 1 && 's'}
+                 </motion.span>
+               )}
             </AnimatePresence>
           </div>
         </div>
         
+        {/* CONTROLS */}
         <div className="flex justify-center gap-6">
           {!isActive ? (
             <button onClick={startTimer} className="w-20 h-20 bg-teal-500 hover:bg-teal-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-teal-500/30 transition-transform hover:scale-105 active:scale-95">
@@ -277,3 +321,4 @@ const FocusTimerPage = () => {
 };
 
 export default FocusTimerPage;
+

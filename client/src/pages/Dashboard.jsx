@@ -1,3 +1,14 @@
+/**
+ * DASHBOARD PAGE
+ * 
+ * This is the primary Command Center for the user. It aggregates:
+ * 1. REAL-TIME SCORE: Circular progress bar showing the latest Pulse Score.
+ * 2. ML INSIGHTS: Textual analysis of performance and burnout risk.
+ * 3. FACTOR ANALYSIS: Breakdown of what boosted or lowered the today's score.
+ * 4. PEER BENCHMARK: Side-by-side comparison with similar users.
+ * 5. TREND CHART: Sparkline showing the last 7 days of productivity.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -16,9 +27,16 @@ import BenchmarkCard from '../components/BenchmarkCard';
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // --- STATE ---
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * DATA ORCHESTRATION
+   * We need data from two different backend routes. Promise.all allows us 
+   * to fetch them simultaneously so the page loads faster.
+   */
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -39,12 +57,17 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // 1. LOADING STATE
   if (loading) return (
     <div className="pt-32 flex items-center justify-center min-h-screen bg-slate-50">
       <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
     </div>
   );
 
+  /**
+   * HELPER: GREETING ENGINE
+   * Provides a contextual greeting based on the current time of day.
+   */
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -52,6 +75,7 @@ const Dashboard = () => {
     return 'Good evening';
   };
 
+  // 2. EMPTY STATE: If no logs exist, guide the user to their first log.
   if (!data?.latest) {
     return (
       <div className="pt-40 pb-24 px-6 max-w-4xl mx-auto">
@@ -74,12 +98,20 @@ const Dashboard = () => {
     );
   }
 
+  /**
+   * HELPER: RISK STATUS MAPPING
+   * Converts a burnout risk string (e.g., "High") into UI styles and icons.
+   */
   const getRiskStatus = (risk) => {
     if (risk === 'High') return { color: 'text-error', bg: 'bg-error/5', border: 'border-error/10', icon: <AlertCircle size={16} /> };
     if (risk === 'Medium') return { color: 'text-warning', bg: 'bg-warning/5', border: 'border-warning/10', icon: <Info size={16} /> };
     return { color: 'text-success', bg: 'bg-success/5', border: 'border-success/10', icon: <CheckCircle2 size={16} /> };
   };
 
+  /**
+   * HELPER: INSIGHT LOGIC
+   * Generates a context-aware heading and description based on the Pulse Score and Burnout Risk.
+   */
   const getInsightContent = (score, risk) => {
     if (score >= 80) {
       if (risk === 'High') return { 
@@ -116,7 +148,7 @@ const Dashboard = () => {
 
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto animate-fade-in text-[#111827]">
-      {/* Header section */}
+      {/* --- DASHBOARD HEADER --- */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
         <div>
            <p className="text-sm font-bold text-primary uppercase tracking-wider mb-2">Overview</p>
@@ -127,16 +159,17 @@ const Dashboard = () => {
               <Calendar className="text-slate-400" size={18} />
               <span className="text-sm font-semibold text-slate-700">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
            </div>
-           <button onClick={() => navigate('/settings')} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-900 transition-colors shadow-sm">
-              <Settings size={20} />
+           <button onClick={() => navigate('/settings')} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-slate-900 transition-all shadow-sm group">
+              <Settings size={18} className="text-slate-400 group-hover:rotate-90 transition-transform duration-500" />
+              <span className="text-sm font-bold uppercase tracking-wider">Settings</span>
            </button>
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* --- STATS GRID --- */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         
-        {/* Core Productivity Card */}
+        {/* PROGRESS CIRCLE CARD */}
         <div className="md:col-span-8 pro-card rounded-3xl p-8 flex flex-col md:flex-row items-center gap-10 border border-slate-100/50 shadow-sm">
            <div className="relative w-56 h-56 flex-shrink-0">
               <svg className="w-full h-full transform -rotate-90">
@@ -171,66 +204,103 @@ const Dashboard = () => {
            </div>
         </div>
 
-         {/* Persona Card */}
-         <div className="md:col-span-4 bg-white rounded-[2.5rem] p-8 flex flex-col justify-between shadow-card relative overflow-hidden group border border-primary/10" style={{ backgroundColor: '#ffffff' }}>
-            <div className="relative z-10">
-               <div className="flex justify-between items-start mb-10">
-                  <div className="p-3 bg-primary/10 text-primary rounded-2xl shadow-sm group-hover:bg-primary group-hover:text-white transition-all duration-300"><Sparkles size={24} /></div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 opacity-70">System Profile</span>
-               </div>
-               <p className="text-[10px] font-extrabold text-[#111827] uppercase tracking-[0.2em] mb-2 opacity-60">Performance Style</p>
-               <h2 className="text-3xl font-extrabold text-[#111827] mb-6 leading-tight">
-                 {data.latest.persona || 'Steady Performer'}
-               </h2>
-               <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden p-0.5 border border-slate-100/50">
-                  <motion.div 
-                     initial={{ width: 0 }}
-                     animate={{ width: "70%" }}
-                     className="h-full bg-primary rounded-full" 
-                  />
-               </div>
-            </div>
-            <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
-         </div>
+          {/* PERSONA CARD: Categorizes behavioral style */}
+          <div className="md:col-span-4 bg-white rounded-[2.5rem] p-8 flex flex-col justify-between shadow-card relative overflow-hidden group border border-primary/10" style={{ backgroundColor: '#ffffff' }}>
+             <div className="relative z-10">
+                <div className="flex justify-between items-start mb-10">
+                   <div className="p-3 bg-primary/10 text-primary rounded-2xl shadow-sm group-hover:bg-primary group-hover:text-white transition-all duration-300"><Sparkles size={24} /></div>
+                   <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 opacity-70">Behavior Profile</span>
+                </div>
+                <p className="text-[10px] font-extrabold text-[#111827] uppercase tracking-[0.2em] mb-2 opacity-60">Status: {data.latest.persona}</p>
+                <h2 className="text-3xl font-extrabold text-[#111827] mb-4 leading-tight">
+                  {data.latest.persona || 'Steady Performer'}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6">
+                  {data.latest.personaReason || "No anomalies detected in your performance entropy today."}
+                </p>
+                <div className="mt-auto pt-4 border-t border-slate-50">
+                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Profile Alignment</p>
+                   <div className="flex items-center gap-2">
+                     <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                     <span className="text-[10px] font-bold text-slate-600 uppercase">Target Goal: {user?.persona || 'Balanced'}</span>
+                   </div>
+                </div>
+             </div>
+             <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+          </div>
 
-        {/* Factors Summary */}
+        {/* --- POSITIVE AND NEGATIVE IMPACT FACTORS --- */}
         <div className="md:col-span-8 pro-card rounded-3xl p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
+           {/* BOOSTERS */}
            <div>
               <div className="flex items-center gap-3 mb-6">
                  <div className="p-2 bg-green-50 text-green-600 rounded-lg"><TrendingUp size={20} /></div>
                  <h4 className="text-lg font-bold text-slate-900">Positive Factors</h4>
               </div>
-              <div className="space-y-3">
-                 {data.latest.topPositiveFactors.map((f, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
-                       <CheckCircle2 size={16} className="text-green-500" />
-                       <span className="text-sm font-semibold text-slate-600">{f}</span>
-                    </div>
-                 ))}
+              <div className="space-y-4">
+                 {(data.latest.topPositiveFactorsDetailed && data.latest.topPositiveFactorsDetailed.length > 0) ? (
+                    data.latest.topPositiveFactorsDetailed.map((f, i) => (
+                        <div key={i} className="flex items-start gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl group hover:bg-white hover:shadow-md transition-all duration-300">
+                           <div className="mt-1 p-1 bg-green-100 rounded-full text-green-600 flex-shrink-0">
+                              <CheckCircle2 size={14} />
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start mb-1">
+                                 <p className="text-sm font-bold text-slate-900">{f.label}</p>
+                                 {f.impact && (
+                                    <span className="text-[10px] font-black px-2 py-0.5 bg-green-100/50 text-green-700 rounded-full border border-green-200 uppercase tracking-tighter">
+                                       +{f.impact} pts
+                                    </span>
+                                 )}
+                              </div>
+                              <p className="text-xs text-slate-500 leading-relaxed font-medium">{f.insight}</p>
+                           </div>
+                        </div>
+                    ))
+                 ) : (
+                    <p className="text-sm text-slate-400 italic">No significant boosters found yet.</p>
+                 )}
               </div>
            </div>
+           {/* CHALLENGES */}
            <div>
               <div className="flex items-center gap-3 mb-6">
                  <div className="p-2 bg-red-50 text-red-600 rounded-lg"><AlertCircle size={20} /></div>
                  <h4 className="text-lg font-bold text-slate-900">Challenges</h4>
               </div>
-              <div className="space-y-3">
-                 {data.latest.topNegativeFactors.map((f, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
-                       <AlertCircle size={16} className="text-red-400" />
-                       <span className="text-sm font-semibold text-slate-600">{f}</span>
-                    </div>
-                 ))}
+              <div className="space-y-4">
+                 {(data.latest.topNegativeFactorsDetailed && data.latest.topNegativeFactorsDetailed.length > 0) ? (
+                    data.latest.topNegativeFactorsDetailed.map((f, i) => (
+                        <div key={i} className="flex items-start gap-4 p-4 bg-red-50/30 border border-red-100/50 rounded-2xl group hover:bg-white hover:shadow-md transition-all duration-300">
+                           <div className="mt-1 p-1 bg-red-100 rounded-full text-red-500 flex-shrink-0">
+                              <AlertCircle size={14} />
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start mb-1">
+                                 <p className="text-sm font-bold text-slate-900">{f.label}</p>
+                                 {f.impact && (
+                                    <span className="text-[10px] font-black px-2 py-0.5 bg-red-100/30 text-red-700 rounded-full border border-red-200 uppercase tracking-tighter">
+                                       {f.impact} pts
+                                    </span>
+                                 )}
+                              </div>
+                              <p className="text-xs text-slate-500 leading-relaxed font-medium">{f.insight}</p>
+                           </div>
+                        </div>
+                    ))
+                 ) : (
+                    <p className="text-sm text-slate-400 italic">No significant challenges detected.</p>
+                 )}
               </div>
            </div>
         </div>
 
-        {/* Benchmark Card */}
+        {/* PEER COMPARISON PANEL */}
         <div className="md:col-span-4 h-full">
            <BenchmarkCard />
         </div>
 
-        {/* Seven Day Trend */}
+        {/* --- TREND LINE: 7 Day History Visualization --- */}
         <div className="md:col-span-12 pro-card rounded-3xl p-8 mb-10">
            <div className="flex justify-between items-center mb-6">
               <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">7-Day Trend</h4>
@@ -238,6 +308,7 @@ const Dashboard = () => {
            </div>
            <div className="h-40 w-full mb-4">
               <ResponsiveContainer width="100%" height="100%">
+                 {/* Slice to ensure we only show the last 7 entries for the sparkline */}
                  <AreaChart data={data.summary.trends.slice(-7)}>
                     <defs>
                       <linearGradient id="chartColor" x1="0" y1="0" x2="0" y2="1">

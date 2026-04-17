@@ -1,3 +1,11 @@
+/**
+ * USER MODEL
+ * 
+ * This schema defines the structure for user accounts. 
+ * It handles core identity data (name, email), security (hashed passwords), 
+ * and application state (onboarding status, persona).
+ */
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -10,16 +18,20 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
-    unique: true,
+    unique: true, // Prevents multiple accounts with the same email
     lowercase: true,
     trim: true,
-    index: true
+    index: true // Optimized for fast login lookups
   },
   password: {
     type: String,
     required: [true, 'Password is required'],
-    select: false // Hide password by default
+    select: false // SECURITY: Prevents password from being included in API responses by default
   },
+  /**
+   * PERSONA
+   * A behavioral classification used for initial dashboard tailoring.
+   */
   persona: {
     type: String,
     enum: {
@@ -30,26 +42,41 @@ const userSchema = new mongoose.Schema({
   },
   onboardingComplete: {
     type: Boolean,
-    default: false
+    default: false // Tracks if the user has finished the initial setup walkthrough
   }
 }, {
-  timestamps: true,
+  timestamps: true, // Adds createdAt and updatedAt automatic fields
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 
-// Password hashing logic
+// --- SECURITY HOOKS ---
 
-// Encrypt password before saving
+/**
+ * PRE-SAVE HOOK
+ * This function runs automatically before a user is saved to the database.
+ * If the password has been changed, it hashes it using bcrypt for secure storage.
+ */
 userSchema.pre('save', async function() {
+  // Only hash the password if it's new or being updated
   if (!this.isModified('password')) {
     return;
   }
+  
+  // Higher rounds = more secure but slower. 10 is the industry baseline.
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Compare password
+// --- HELPER METHODS ---
+
+/**
+ * COMPARES PASSWORDS
+ * Used during login to check if the entered password matches the stored hash.
+ * 
+ * @param {string} enteredPassword - The plain text password from the login form
+ * @returns {Promise<boolean>} - True if they match
+ */
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
@@ -57,4 +84,5 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
+
 

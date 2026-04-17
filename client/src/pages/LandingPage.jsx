@@ -1,3 +1,11 @@
+/**
+ * LANDING PAGE
+ * 
+ * The public-facing entry point of the application. 
+ * Its mission is to convert visitors into users by explaining the 
+ * value proposition of the Pulse ML engine and its benefits.
+ */
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +16,11 @@ const LandingPage = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      {/* Hero Section */}
+      
+      {/* --- HERO SECTION ---
+          The "Hook": Grabs attention with large typography and primary CTA.
+          Uses framer-motion to animate the entrance of the main content.
+      */}
       <section className="pt-40 pb-32 px-6">
         <div className="max-w-7xl mx-auto text-center">
           <motion.div
@@ -32,6 +44,7 @@ const LandingPage = () => {
               >
                 Get Started for Free <ArrowRight size={20} />
               </button>
+              {/* Smooth scroll anchor */}
               <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="btn-outline px-10 py-5 text-lg">
                 How it works
               </button>
@@ -40,9 +53,9 @@ const LandingPage = () => {
         </div>
       </section>
 
-
-
-      {/* Features */}
+      {/* --- FEATURES SECTION ---
+          The "How": Breakdown of core selling points like ML models and burnout alerts.
+      */}
       <section id="features" className="py-32 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -61,7 +74,9 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Social Proof/Footer-ish CTA */}
+      {/* --- CALL TO ACTION (CTA) ---
+          The "Closure": Final push to signing up before they leave.
+      */}
       <section className="py-32 px-6">
         <div className="max-w-4xl mx-auto pro-card rounded-[3rem] p-16 md:p-24 text-center bg-primary text-white relative overflow-hidden">
            <div className="relative z-10">
@@ -76,6 +91,7 @@ const LandingPage = () => {
                 Sign Up Now
               </button>
            </div>
+           {/* Visual background sparkles for premium feel */}
            <div className="absolute top-0 right-0 p-10 opacity-10"><Sparkles size={200} /></div>
         </div>
       </section>

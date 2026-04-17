@@ -1,3 +1,12 @@
+/**
+ * MAIN APP COMPONENT
+ * 
+ * This is the "Skeleton" of the Pulse frontend. It defines:
+ * 1. GLOBAL STATE: Wraps the app in Auth and Timer providers.
+ * 2. ROUTING: Maps browser URLs to specific page components.
+ * 3. SECURITY: Uses a ProtectedRoute wrapper to guard private pages.
+ */
+
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -6,7 +15,9 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import Navbar from './components/common/Navbar';
 import { motion } from 'framer-motion';
 
-// Lazy load pages for performance
+// --- PERFORMANCE: LAZY LOADING ---
+// Only downloads the code for a page when the user actually navigates to it.
+// This makes the initial website load much faster.
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const SignupPage = lazy(() => import('./pages/SignupPage'));
@@ -17,6 +28,10 @@ const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Settings = lazy(() => import('./pages/Settings'));
 const FocusTimerPage = lazy(() => import('./pages/FocusTimerPage'));
 
+/**
+ * LOADING FALLBACK
+ * The UI shown while Lazy Loaded components are downloading.
+ */
 const LoadingFallback = () => (
   <div className="pt-32 flex items-center justify-center min-h-screen bg-[#F8FBFB]">
     <motion.div 
@@ -29,20 +44,22 @@ const LoadingFallback = () => (
 
 function App() {
   return (
+    // 1. PROVIDERS: Give the entire app access to User and Timer data
     <AuthProvider>
       <TimerProvider>
         <Router>
           <div className="min-h-screen bg-[#F8FBFB] font-body">
           <Navbar />
           <main>
+            {/* 2. SUSPENSE: Handles the loading state for lazy components */}
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
-                {/* Public Routes */}
+                {/* PUBLIC ROUTES: Anyone can see landing and login */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
 
-                {/* Protected Routes */}
+                {/* PROTECTED ROUTES: Only logged-in users can enter this section */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/log" element={<DailyLog />} />
@@ -52,7 +69,7 @@ function App() {
                   <Route path="/focus" element={<FocusTimerPage />} />
                 </Route>
 
-                {/* Catch all */}
+                {/* 404 CATCH-ALL: Redirects invalid URLs to the landing page */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
@@ -65,3 +82,4 @@ function App() {
 }
 
 export default App;
+

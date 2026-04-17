@@ -1,3 +1,11 @@
+/**
+ * DAILY LOG MODEL
+ * 
+ * This Mongoose schema defines the structure for storing a user's daily metrics.
+ * It tracks physical health (sleep, water), cognitive output (study, focus), 
+ * and psychological markers (mood, stress).
+ */
+
 const mongoose = require('mongoose');
 
 const dailyLogSchema = new mongoose.Schema({
@@ -7,6 +15,9 @@ const dailyLogSchema = new mongoose.Schema({
     required: [true, 'User ID is required'],
     index: true
   },
+  
+  // --- CORE HEALTH & PRODUCTIVITY METRICS ---
+  
   sleepHours: {
     type: Number,
     required: [function() { return this.is_completed; }, 'Sleep hours are required'],
@@ -32,19 +43,19 @@ const dailyLogSchema = new mongoose.Schema({
     max: [1440, 'Exercise mins cannot exceed a full day (1440 mins)']
   },
   moodScore: {
-    type: Number,
+    type: Number, // 1 (Poor) to 5 (Excellent)
     required: [function() { return this.is_completed; }, 'Mood score is required'],
     min: [1, 'Mood score minimum is 1'],
     max: [5, 'Mood score maximum is 5']
   },
   stressLevel: {
-    type: Number,
+    type: Number, // 1 (Relaxed) to 5 (Extremely Stressed)
     required: [function() { return this.is_completed; }, 'Stress level is required'],
     min: [1, 'Stress level minimum is 1'],
     max: [5, 'Stress level maximum is 5']
   },
   caffeineIntake: {
-    type: Number,
+    type: Number, // Measured in standard units (e.g., cups/mg)
     required: [function() { return this.is_completed; }, 'Caffeine intake is required'],
     min: [0, 'Caffeine intake cannot be negative'],
     default: 0
@@ -56,7 +67,7 @@ const dailyLogSchema = new mongoose.Schema({
     default: 0
   },
   deepFocusBlocks: {
-    type: Number,
+    type: Number, // Number of "Deep Work" sessions completed
     required: [function() { return this.is_completed; }, 'Deep focus blocks are required'],
     min: [0, 'Deep focus blocks cannot be negative'],
     default: 0
@@ -67,6 +78,10 @@ const dailyLogSchema = new mongoose.Schema({
     min: [0, 'Social media mins cannot be negative'],
     default: 0
   },
+
+  // --- FOCUS TIMER SPECIFIC DATA ---
+  // These fields are populated by the interactive timer on the frontend
+  
   focus_duration_mins: {
     type: Number,
     min: [0, 'Focus duration cannot be negative'],
@@ -74,8 +89,7 @@ const dailyLogSchema = new mongoose.Schema({
   },
   focus_quality_score: {
     type: Number,
-    min: [1, 'Focus quality score minimum is 1'],
-    max: [5, 'Focus quality score maximum is 5'],
+    min: [1, 'Focus quality score minimum is 1'],    max: [5, 'Focus quality score maximum is 5'],
     default: null
   },
   distraction_level: {
@@ -87,7 +101,7 @@ const dailyLogSchema = new mongoose.Schema({
     default: null
   },
   distraction_level_encoded: {
-    type: Number,
+    type: Number, // Numeric representation for ML Processing (0, 1, 2)
     enum: [0, 1, 2, null],
     default: null
   },
@@ -95,9 +109,12 @@ const dailyLogSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+
+  // --- LOG STATUS & TIME TRACKING ---
+  
   is_completed: {
     type: Boolean,
-    default: true
+    default: true // False if log is only partially filled (e.g., just focus timer)
   },
   date: {
     type: Date,
@@ -115,22 +132,23 @@ const dailyLogSchema = new mongoose.Schema({
     required: [function() { return this.is_completed; }, 'isWeekend flag is required'],
     default: false
   },
+  /**
+   * dayKey: A unique string identifier (usually YYYY-MM-DD)
+   * This is CRITICAL for preventing duplicate logs for the same day.
+   */
   dayKey: {
     type: String,
     required: [true, 'Day key is required for uniqueness'],
     index: true
   }
 }, {
-  timestamps: true
+  timestamps: true // Adds createdAt and updatedAt automatic fields
 });
 
 // Enforce strictly one log per user per local day key
 dailyLogSchema.index({ userId: 1, dayKey: 1 }, { unique: true });
 
-// Ensure unique log per user per day (Simple date check)
-// This would need more refinement in a production pre-save hook 
-// to strip hours/minutes for date-only uniqueness.
-
 const DailyLog = mongoose.model('DailyLog', dailyLogSchema);
 
 module.exports = DailyLog;
+

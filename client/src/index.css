@@ -1,6 +1,20 @@
+/**
+ * GLOBAL STYLESHEET
+ * 
+ * This file defines the visual DNA of the Pulse application.
+ * It uses Tailwind CSS v4 and contains:
+ * 1. DESIGN TOKENS: Colors, Typography, and Shadows.
+ * 2. BASE STYLES: Standard HTML element resets and defaults.
+ * 3. COMPONENT CLASSES: Reusable UI recipes (Cards, Buttons, Inputs).
+ * 4. ANIMATIONS: Global entrance effects.
+ */
+
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 
+/* --- 1. DESIGN SYSTEM ---
+   These variables are the source of truth for all colors and fonts used in the UI.
+*/
 @theme {
   --color-primary: #2D7D72;
   --color-secondary: #64748B;
@@ -18,6 +32,9 @@
   --shadow-card: 0 20px 50px -15px rgba(0,0,0,0.06);
 }
 
+/* --- 2. LAYOUT FOUNDATIONS ---
+   Defines the global behavior of the browser environment.
+*/
 @layer base {
   body {
     margin: 0;
@@ -42,7 +59,11 @@
   }
 }
 
+/* --- 3. PROFESSIONAL COMPONENTS ---
+   Standard UI recipes used throughout the app for consistency.
+*/
 @layer components {
+  /* Premium Glassmorphic Card */
   .pro-card {
     background: white;
     border: 1px solid rgba(45, 125, 114, 0.08);
@@ -57,6 +78,7 @@
     transform: translateY(-4px);
   }
 
+  /* High-Impact Heading */
   .pro-heading {
     font-size: clamp(2rem, 6vw, 4rem);
     font-weight: 800;
@@ -65,19 +87,23 @@
     letter-spacing: -0.05em;
   }
 
+  /* Primary Button (Teal-based) */
   .btn-primary {
     @apply px-6 py-3 bg-primary text-white rounded-xl font-semibold shadow-md hover:bg-accent transition-all active:scale-95;
   }
 
+  /* Outline Button */
   .btn-outline {
     @apply px-6 py-3 border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition-all;
   }
 
+  /* Clean Input Fields */
   .input-field {
     @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/10 focus:border-primary outline-none transition-all;
   }
 }
 
+/* --- 4. ANIMATIONS --- */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -86,4 +112,5 @@
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
+
 

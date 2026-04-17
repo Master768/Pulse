@@ -1,7 +1,14 @@
+/**
+ * PULSE Backend Server Entry Point
+ * 
+ * This file initializes the Express application, connects to the database,
+ * configures security middleware, and mounts all API routes.
+ */
+
 const express = require('express');
 const dotenv = require('dotenv');
 
-// Load env vars FIRST
+// Load environment variables FIRST to ensure they are available to other modules
 dotenv.config();
 
 const morgan = require('morgan');
@@ -10,51 +17,46 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 
-
+// Utility and Middleware imports
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
-// Route files
+// route files: These define the endpoints for different features
 const authRoutes = require('./routes/authRoutes');
 const logRoutes = require('./routes/logRoutes');
 const predictionRoutes = require('./routes/predictionRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const benchmarkRoutes = require('./routes/benchmarkRoutes');
 
-// Load env vars
-// Moved to top
-
-
-// Connect to database
+// Connect to MongoDB using the configuration in ./config/db.js
 connectDB();
 
 const app = express();
 
-// Body parser
+/**
+ * BODY PARSER
+ * Allows the server to accept and process JSON data from requests
+ */
 app.use(express.json());
 
-// NoSQL Injection Protection - Disabled due to compatibility issues with test runners
-// if (process.env.NODE_ENV !== 'test') {
-//   app.use(mongoSanitize());
-// }
-
-
-
-// Enable CORS with restrictions
-// Enable CORS with more robust origin matching for production
+/**
+ * CORS CONFIGURATION (Cross-Origin Resource Sharing)
+ * Determines which frontend domains are allowed to talk to this backend.
+ */
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://pulse-delta-sandy.vercel.app',
   'http://localhost:5173',
   'http://127.0.0.1:5173'
-].filter(Boolean).map(url => url.replace(/\/$/, '')); // Remove trailing slashes
+].filter(Boolean).map(url => url.replace(/\/$/, '')); // Cleanup trailing slashes
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
     
     const normalizedOrigin = origin.replace(/\/$/, '');
+    // In production, strictly match; in dev, allow everything
     if (allowedOrigins.indexOf(normalizedOrigin) !== -1 || process.env.NODE_ENV !== 'production') {
       callback(null, true);
     } else {
@@ -67,57 +69,78 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Set security headers
+/**
+ * SECURITY MIDDLEWARE
+ * Helmet helps secure Express apps by setting various HTTP headers
+ */
 app.use(helmet());
 
-// Rate Limiting for Auth
+/**
+ * RATE LIMITING
+ * Prevents brute-force attacks by limiting the number of requests from a single IP
+ */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Increased to 100 for dev/prod flexibility
+  max: 100, // Max 100 attempts per window
   message: 'Too many authentication attempts, please try again after 15 minutes'
 });
 
+// Apply rate limiting to sensitive authentication routes
 if (process.env.NODE_ENV !== 'test') {
   app.use('/api/auth/signup', authLimiter);
   app.use('/api/auth/login', authLimiter);
 }
 
-
-// Dev logging middleware
+/**
+ * DEVELOPMENT LOGGING
+ * Provides colored logs in the terminal during development
+ */
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-
-// Mount routers
+/**
+ * MOUNT ROUTERS
+ * Maps URL paths to their respective route files
+ */
 app.use('/api/auth', authRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/benchmark', benchmarkRoutes);
 
-// Root route
+/**
+ * ROOT ROUTE
+ * Simple heartbeat endpoint to verify the API is running
+ */
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to PULSE Backend API' });
 });
 
-// Error handling middleware
+/**
+ * ERROR HANDLING
+ * Centralized middleware to catch and format errors cleanly for the client
+ */
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 8080;
 
+/**
+ * SERVER STARTUP
+ * Only starts listening if not running in a test environment
+ */
 if (process.env.NODE_ENV !== 'test') {
   const server = app.listen(PORT, () => {
     console.log(`🚀 PULSE Backend Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
   });
 
-  // Handle unhandled promise rejections
+  // Handle errors that happen outside of standard request flows (e.g., DB connection loss)
   process.on('unhandledRejection', (err, promise) => {
     console.error(`❌ Unhandled Rejection: ${err.message}`);
-    // Close server & exit process
+    // Close server and exit process safely
     server.close(() => process.exit(1));
   });
 }
 
+module.exports = app; // Exported for integration testing
 
-module.exports = app; // Export for testing

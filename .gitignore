@@ -40,3 +40,9 @@ test-results/
 desktop.ini
 .DS_Store
 Thumbs.db
+
+# Agent Internals
+.agent/
+_bmad/
+_bmad-output/
+scratch/

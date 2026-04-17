@@ -1,23 +1,38 @@
+/**
+ * TIMER CONTEXT
+ * 
+ * This file manages the "Global Clock" for focus sessions. 
+ * By using Context, the timer can keep running even if the user navigates 
+ * to different pages (e.g., from Focus to Dashboard).
+ */
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 const TimerContext = createContext(null);
 
 export const TimerProvider = ({ children }) => {
-  const [isActive, setIsActive] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [activeSeconds, setActiveSeconds] = useState(0); 
-  const [pauses, setPauses] = useState(0);
-  const [targetMinutes, setTargetMinutes] = useState(25);
-  const [isFinished, setIsFinished] = useState(false);
+  // --- TIMER STATE ---
+  const [isActive, setIsActive] = useState(false); // Is it currently counting?
+  const [isPaused, setIsPaused] = useState(false); // Is it temporarily stopped?
+  const [activeSeconds, setActiveSeconds] = useState(0); // Elapsed time in seconds
+  const [pauses, setPauses] = useState(0); // Count of how many times they hit pause
+  const [targetMinutes, setTargetMinutes] = useState(25); // Goal duration (e.g., Pomodoro 25m)
+  const [isFinished, setIsFinished] = useState(false); // Signal that time is up
   
+  // A 'ref' is used to store the Interval ID so we can stop it later
   const timerRef = useRef(null);
 
+  /**
+   * THE TICKER ENGINE
+   * This effect runs whenever the active/paused states change.
+   */
   useEffect(() => {
-    // If the timer is active AND not paused, tick every second
+    // Only run if the timer is on AND not paused
     if (isActive && !isPaused) {
       timerRef.current = setInterval(() => {
         setActiveSeconds(prev => {
            const next = prev + 1;
+           // 1. CHECK COMPLETION: Have we reached the goal?
            if (next >= targetMinutes * 60) {
               clearInterval(timerRef.current);
               setIsActive(false);
@@ -26,12 +41,17 @@ export const TimerProvider = ({ children }) => {
            }
            return next;
         });
-      }, 1000);
+      }, 1000); // 1000ms = 1 second
     } else {
+      // If paused or inactive, stop the interval
       clearInterval(timerRef.current);
     }
+
+    // Cleanup: Stop the clock if the component unmounts
     return () => clearInterval(timerRef.current);
   }, [isActive, isPaused, targetMinutes]);
+
+  // --- CONTROL FUNCTIONS ---
 
   const startTimer = () => {
     if (!isActive) {
@@ -41,14 +61,14 @@ export const TimerProvider = ({ children }) => {
       setPauses(0);
       setIsFinished(false);
     } else if (isPaused) {
-      setIsPaused(false);
+      setIsPaused(false); // Resume
     }
   };
 
   const pauseTimer = () => {
     if (isActive && !isPaused) {
       setIsPaused(true);
-      setPauses(p => p + 1);
+      setPauses(p => p + 1); // Track focus interruption
     }
   };
 
@@ -88,6 +108,10 @@ export const TimerProvider = ({ children }) => {
   );
 };
 
+/**
+ * CUSTOM HOOK: useTimer
+ * Convenient way to access timer controls and status from any page.
+ */
 export const useTimer = () => {
   const context = useContext(TimerContext);
   if (!context) {
@@ -95,3 +119,4 @@ export const useTimer = () => {
   }
   return context;
 };
+
