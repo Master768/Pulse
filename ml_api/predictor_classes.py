@@ -2,12 +2,12 @@ import pickle
 import pandas as pd
 import numpy as np
 import os
-from .constants import CORE_FEATURES, CLASSIFIER_FEATURES
+from constants import CORE_FEATURES, CLASSIFIER_FEATURES
 
-/**
- * BASE PREDICTOR CLASS
- * A helper class that handles common operations like loading serialized model files (.pkl).
- */
+"""
+ BASE PREDICTOR CLASS
+ A helper class that handles common operations like loading serialized model files (.pkl).
+"""
 class BasePredictor:
     def __init__(self, model_dir):
         self.model_dir = model_dir
@@ -18,15 +18,15 @@ class BasePredictor:
         with open(path, 'rb') as f:
             return pickle.load(f)
 
-/**
- * PRODUCTIVITY PREDICTOR
- * Calculates a numerical productivity score (0-100) based on daily metrics.
- * 
- * Logic:
- * 1. Base ML Prediction: Uses a Scikit-Learn model and Scaler.
- * 2. Biological Weighting: Applies heuristic corrections for extreme stress, screen time, etc.
- * 3. Synergy Boosts: Rewards hydration and deep focus blocks.
- */
+"""
+ PRODUCTIVITY PREDICTOR
+ Calculates a numerical productivity score (0-100) based on daily metrics.
+ 
+ Logic:
+ 1. Base ML Prediction: Uses a Scikit-Learn model and Scaler.
+ 2. Biological Weighting: Applies heuristic corrections for extreme stress, screen time, etc.
+ 3. Synergy Boosts: Rewards hydration and deep focus blocks.
+"""
 class ProductivityPredictor(BasePredictor):
     def __init__(self, model_dir):
         super().__init__(model_dir)
@@ -39,7 +39,7 @@ class ProductivityPredictor(BasePredictor):
         INPUT: DataFrame with user metrics
         OUTPUT: Float (0-100) rounded to 1 decimal place.
         """
-        from .constants import WEIGHT_MULTIPLIERS, SYNERGY_RULES
+        from constants import WEIGHT_MULTIPLIERS, SYNERGY_RULES
         
         # Scale features and get baseline from ML model
         X_sc = self.scaler.transform(df[CORE_FEATURES])
@@ -70,12 +70,12 @@ class ProductivityPredictor(BasePredictor):
         final_score = base_score - penalty + boost
         return round(float(np.clip(final_score, 0, 100)), 1)
 
-/**
- * BURNOUT CLASSIFIER
- * Predicts the risk of burnout (Low, Medium, High).
- * 
- * It uses categorical encoding for the 'day_of_week' and a Random Forest (or similar) classifier.
- */
+"""
+ BURNOUT CLASSIFIER
+ Predicts the risk of burnout (Low, Medium, High).
+ 
+ It uses categorical encoding for the 'day_of_week' and a Random Forest (or similar) classifier.
+"""
 class BurnoutClassifier(BasePredictor):
     def __init__(self, model_dir):
         super().__init__(model_dir)
@@ -110,15 +110,15 @@ class BurnoutClassifier(BasePredictor):
         confidence_map = {label: round(float(prob), 2) for label, prob in zip(self.label_encoder.classes_, probs)}
         return risk_label, confidence_map
 
-/**
- * PERSONA ENGINE
- * Categorizes users into behavioral "personas" based on their habits.
- * 
- * Logic:
- * 1. Clustering: Uses K-Means to find the nearest behavioral cluster.
- * 2. Heuristic Overrides: Adds a "Reality Check" layer to ensure personas match 
- *    obvious edge cases (e.g., extremely high study hours).
- */
+"""
+ PERSONA ENGINE
+ Categorizes users into behavioral "personas" based on their habits.
+ 
+ Logic:
+ 1. Clustering: Uses K-Means to find the nearest behavioral cluster.
+ 2. Heuristic Overrides: Adds a "Reality Check" layer to ensure personas match 
+    obvious edge cases (e.g., extremely high study hours).
+"""
 class PersonaEngine(BasePredictor):
     def __init__(self, model_dir):
         super().__init__(model_dir)
@@ -166,13 +166,13 @@ class PersonaEngine(BasePredictor):
 
         return persona, cluster_id, reason
 
-/**
- * PULSE EXPLAINER
- * Breaks down the "Why" behind the productivity score.
- * 
- * It calculates the impact of each feature by multiplying the model's coefficients 
- * by the user's specific values, highlighting what most helped or hurt.
- */
+"""
+ PULSE EXPLAINER
+ Breaks down the "Why" behind the productivity score.
+ 
+ It calculates the impact of each feature by multiplying the model's coefficients 
+ by the user's specific values, highlighting what most helped or hurt.
+"""
 class PulseExplainer:
     def __init__(self, productivity_model, burnout_model):
         self.productivity_model = productivity_model
@@ -184,7 +184,7 @@ class PulseExplainer:
         INPUT: DataFrame with user metrics
         OUTPUT: (list PositiveFactors, list NegativeFactors, list AllContributions)
         """
-        from .constants import FEATURE_METADATA, FEATURE_AVERAGES, WEIGHT_MULTIPLIERS, SYNERGY_RULES
+        from constants import FEATURE_METADATA, FEATURE_AVERAGES, WEIGHT_MULTIPLIERS, SYNERGY_RULES
         
         # Calculate impacts: Impact = Coefficient * Scaled Value + Adjustments
         coefs = self.productivity_model.model.coef_

@@ -1,15 +1,15 @@
-/**
- * PULSE ML API Interface (Python)
- * 
- * This file serves as the main gateway for the Pulse Machine Learning engine.
- * it coordinates the loading of specialized predictors (Productivity, Burnout, Persona)
- * and provides a unified 'predict_all' interface for the Node.js backend to consume.
- */
+"""
+ PULSE ML API Interface (Python)
+ 
+ This file serves as the main gateway for the Pulse Machine Learning engine.
+ it coordinates the loading of specialized predictors (Productivity, Burnout, Persona)
+ and provides a unified 'predict_all' interface for the Node.js backend to consume.
+"""
 
 import os
 import pandas as pd
-from .predictor_classes import ProductivityPredictor, BurnoutClassifier, PersonaEngine, PulseExplainer
-from .constants import FEATURE_AVERAGES
+from predictor_classes import ProductivityPredictor, BurnoutClassifier, PersonaEngine, PulseExplainer
+from constants import FEATURE_AVERAGES
 
 class PulseAPI:
     """
@@ -24,9 +24,9 @@ class PulseAPI:
         Parameters:
         model_dir (str): The directory where serialized (.pkl) models are stored.
         """
-        # Ensure we find the model directory even if called from different subfolders
+        # Ensure we find the model directory
         if not os.path.exists(model_dir):
-            model_dir = os.path.join(os.path.dirname(__file__), '..', 'pulse_models')
+            model_dir = os.path.join(os.path.dirname(__file__), 'pulse_models')
         
         # Instantiate specific prediction engines
         self.productivity_model = ProductivityPredictor(model_dir)
