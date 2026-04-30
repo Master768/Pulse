@@ -53,6 +53,10 @@ const FocusTimerPage = () => {
    */
   useEffect(() => {
     if (isFinished && !sessionSummary && activeSeconds > 0) {
+      // Play a classic chime/bell sound when the timer completes
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.play().catch(err => console.log("Audio playback failed:", err));
+      
       handleStop();
     }
   }, [isFinished, sessionSummary, activeSeconds]);

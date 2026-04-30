@@ -28,7 +28,7 @@ const predictionSchema = new mongoose.Schema({
   },
 
   // --- SCORE & RISK METRICS ---
-  
+
   productivityScore: {
     type: Number, // Calculated on a scale of 0-100
     required: [true, 'Productivity score is required'],
@@ -55,7 +55,7 @@ const predictionSchema = new mongoose.Schema({
   },
 
   // --- BEHAVIORAL GROUPING ---
-  
+
   persona: {
     type: String, // Human-readable category (e.g., 'Balanced Optimizer')
     required: [true, 'Persona is required']
@@ -71,7 +71,7 @@ const predictionSchema = new mongoose.Schema({
   },
 
   // --- INSIGHTS & EXPLANATIONS ---
-  
+
   topPositiveFactors: {
     type: [String], // Simple list of labels (e.g., ['Sleep Hygiene', 'Hydration'])
     default: []
@@ -94,7 +94,7 @@ const predictionSchema = new mongoose.Schema({
   },
 
   // --- PEER BENCHMARKING (Social Comparison) ---
-  
+
   peer_benchmark: {
     sleep_percentile: { type: Number, min: 0, max: 100 },
     productivity_percentile: { type: Number, min: 0, max: 100 },
@@ -105,7 +105,7 @@ const predictionSchema = new mongoose.Schema({
   },
 
   // --- METADATA ---
-  
+
   isEdited: {
     type: Boolean, // True if the log (and thus prediction) was updated today
     default: false

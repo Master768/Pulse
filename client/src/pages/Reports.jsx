@@ -14,7 +14,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
-  Calendar, Filter, Download, Activity, TrendingUp, Info, Search, LayoutGrid, Clock
+  Calendar, Filter, Download, Activity, TrendingUp, Info, Search, LayoutGrid, Clock, FileText, X
 } from 'lucide-react';
 import api from '../utils/api';
 
@@ -22,6 +22,32 @@ const Reports = () => {
   // --- STATE ---
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [journalText, setJournalText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleOpenJournal = (item) => {
+    setSelectedLog(item);
+    setJournalText(item.journalNote || '');
+    setIsModalOpen(true);
+  };
+
+  const handleSaveJournal = async () => {
+    if (!selectedLog) return;
+    setIsSaving(true);
+    try {
+      await api.put(`/predictions/${selectedLog._id}/journal`, { note: journalText });
+      setData(prevData => prevData.map(item => 
+        item._id === selectedLog._id ? { ...item, journalNote: journalText } : item
+      ));
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("Failed to save journal:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   /**
    * DATA FETCHING
@@ -210,8 +236,12 @@ const Reports = () => {
                     </div>
 
                     <div className="w-full flex justify-end">
-                       <div className="p-2 text-slate-300 group-hover:text-slate-400 transition-colors">
-                          <Search size={18} />
+                       <div 
+                         onClick={() => handleOpenJournal(item)}
+                         className={`p-2 transition-colors cursor-pointer rounded-full hover:bg-slate-100 ${item.journalNote ? 'text-primary' : 'text-slate-300 group-hover:text-slate-400'}`}
+                         title={item.journalNote ? "Edit Journal" : "Add Journal Note"}
+                       >
+                          <FileText size={18} />
                        </div>
                     </div>
                  </div>
@@ -219,6 +249,62 @@ const Reports = () => {
            </div>
         </div>
       </div>
+      )}
+
+      {/* --- JOURNAL MODAL --- */}
+      {isModalOpen && selectedLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl relative"
+          >
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-primary/10 text-primary rounded-xl font-bold">
+                 <FileText size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Daily Journal</h3>
+                <p className="text-sm font-bold text-slate-500">{new Date(selectedLog.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <label className="block text-sm font-bold text-slate-700 mb-2">Reflect on this day</label>
+              <textarea
+                value={journalText}
+                onChange={(e) => setJournalText(e.target.value)}
+                placeholder="What went well? What caused stress? Add your context here..."
+                className="w-full h-32 p-4 border border-slate-200 rounded-2xl bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveJournal}
+                disabled={isSaving}
+                className="btn-primary px-8 py-3 flex items-center gap-2"
+              >
+                {isSaving ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : 'Save Note'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );

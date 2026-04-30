@@ -62,5 +62,35 @@ const getPredictionHistory = async (req, res, next) => {
   }
 };
 
-module.exports = { getLatestPrediction, getPredictionHistory };
+/**
+ * UPDATE JOURNAL NOTE
+ * PUT /api/predictions/:id/journal
+ * 
+ * Allows users to add or edit a retrospective text note on a specific day's prediction.
+ */
+const updateJournalNote = async (req, res, next) => {
+  try {
+    const { note } = req.body;
+    const predictionId = req.params.id;
 
+    // Find the prediction and ensure it belongs to the user
+    const prediction = await Prediction.findOne({ _id: predictionId, userId: req.user.id });
+
+    if (!prediction) {
+      return res.status(404).json({ success: false, error: 'Prediction not found' });
+    }
+
+    // Update the journal note
+    prediction.journalNote = note || '';
+    await prediction.save();
+
+    res.status(200).json({
+      success: true,
+      data: prediction
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getLatestPrediction, getPredictionHistory, updateJournalNote };
