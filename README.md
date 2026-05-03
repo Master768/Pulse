@@ -16,6 +16,15 @@ The system's core intelligence resides in its **3-Model ML Ensemble**, which uti
 
 ---
 
+## 🚀 Recent Progress & Updates (v2.1)
+
+- **ML Backend Refactor:** Extracted ML prediction logic into a reusable `generateAndSavePrediction` function within `logController.js`, fixing a critical bug to ensure the **Focus Timer now perfectly syncs and updates the dashboard ML metrics** after every session.
+- **Dynamic Peer Benchmarks:** Completely removed restrictive cluster-size limitations. Benchmarks now intelligently unlock as long as the user has logged 7 days of data, generating **Custom AI Insights** (praising productivity, warning of burnout, suggesting sleep) dynamically derived from real-time data.
+- **UI Modernization:** Transitioned the Authentication (Login/Signup) pages to the global Light Theme, using a clean, premium white aesthetic with subtle radial gradients for improved readability and consistency.
+- **Deployment Stabilization:** ML service restructured to handle required model files accurately on Render via Python imports and correct internal URL references (`process.env.FLASK_API_URL`).
+
+---
+
 ## 2. Project Overview
 
 ### The Problem
