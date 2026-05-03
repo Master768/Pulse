@@ -41,25 +41,25 @@ const LoginPage = () => {
         <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white">
             
             {/* --- LEFT SIDE: BRANDING PANEL (Hidden on mobile) --- */}
-            <div className="hidden lg:flex flex-col justify-between bg-slate-900 p-20 relative overflow-hidden">
+            <div className="hidden lg:flex flex-col justify-between bg-white p-20 relative overflow-hidden">
                 <div className="relative z-10">
-                    <Link to="/" className="flex items-center gap-2 text-white mb-32">
+                    <Link to="/" className="flex items-center gap-2 text-slate-900 mb-32">
                         <Zap size={24} className="text-primary fill-current" />
                         <span className="text-2xl font-bold tracking-tight">PULSE.</span>
                     </Link>
-                    <h2 className="text-6xl font-bold text-white leading-tight mb-8">
+                    <h2 className="text-6xl font-bold text-slate-900 leading-tight mb-8">
                         The Operating<br />System for your<br /><span className="text-primary">Performance.</span>
                     </h2>
-                    <p className="text-xl text-slate-400 max-w-sm leading-relaxed">
+                    <p className="text-xl text-slate-500 max-w-sm leading-relaxed">
                         Track your performance metrics and optimize your daily rhythm.
                     </p>
                 </div>
                 
                 <div className="relative z-10 flex items-center gap-6">
-                    <p className="text-sm font-semibold text-slate-500">Your personal focus intelligence system.</p>
+                    <p className="text-sm font-semibold text-slate-400">Your personal focus intelligence system.</p>
                 </div>
                 {/* Visual background gradient for premium feel */}
-                <div className="absolute top-0 right-0 w-full h-full opacity-20 bg-[radial-gradient(circle_at_70%_30%,#2563EB_0%,transparent_50%)]" />
+                <div className="absolute top-0 right-0 w-full h-full opacity-10 bg-[radial-gradient(circle_at_70%_30%,#2563EB_0%,transparent_50%)]" />
             </div>
 
             {/* --- RIGHT SIDE: LOGIN FORM --- */}
