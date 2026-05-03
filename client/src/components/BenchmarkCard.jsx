@@ -126,8 +126,17 @@ const BenchmarkCard = () => {
           })}
         </div>
         
+        {/* CUSTOM INSIGHT */}
+        {data.insight_message && (
+          <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <p className="text-sm font-medium text-slate-700 leading-snug">
+              <span className="font-bold text-primary mr-1">Insight:</span> {data.insight_message}
+            </p>
+          </div>
+        )}
+        
         {/* FOOTNOTE */}
-        <div className="mt-8 pt-5 border-t border-slate-100/80 text-center">
+        <div className="mt-6 pt-4 border-t border-slate-100/80 text-center">
            <p className="text-xs text-slate-400 font-medium">Compared against <span className="font-bold text-slate-500">{data.metrics?.cluster_size || 0}</span> anonymous users in your cluster</p>
         </div>
       </div>

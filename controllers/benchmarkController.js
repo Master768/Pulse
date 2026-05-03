@@ -30,36 +30,30 @@ const getBenchmark = async (req, res, next) => {
 
     const clusterId = latestPrediction.clusterId;
 
-    // 2. DATA HYGIENE: Filter for "Valid Peers"
-    // To ensure accurate benchmarks, we only compare against users with at least 7 days of logs.
-    const userLogCounts = await DailyLog.aggregate([
-      { $group: { _id: "$userId", count: { $sum: 1 } } },
-      { $match: { count: { $gte: 7 } } }
-    ]);
-    const validUserIds = userLogCounts.map(u => u._id.toString());
+    // 2. DATA HYGIENE: Check if CURRENT user has at least 7 days of logs.
+    const userLogCount = await DailyLog.countDocuments({ userId: req.user.id });
+    
+    if (userLogCount < 7) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          is_available: false,
+          message: 'Not enough data yet. Need 7 days of logs.'
+        }
+      });
+    }
 
-    // 3. FETCH PEER DATA: Get all predictions in the same cluster from valid users
+    // 3. FETCH PEER DATA: Get all predictions in the same cluster
     const clusterPredictions = await Prediction.find({ clusterId }).populate('logId');
-    const validClusterPredictions = clusterPredictions.filter(p => 
-      p.userId && validUserIds.includes(p.userId.toString())
-    );
+    const validClusterPredictions = clusterPredictions.filter(p => p.userId);
 
     const uniqueUsersInCluster = new Set(validClusterPredictions.map(p => p.userId.toString()));
 
     /**
      * PRIVACY & ACCURACY CHECK
-     * If there are fewer than 10 unique users in a cluster, we don't show 
-     * benchmarks yet to avoid identification and statistical noise.
+     * The < 10 unique users check is completely removed so the benchmark is available 
+     * as long as the user themselves has 7 logs.
      */
-    if (uniqueUsersInCluster.size < 10) {
-      return res.status(200).json({
-        success: true,
-        data: {
-          is_available: false,
-          message: 'Not enough data yet'
-        }
-      });
-    }
 
     // 4. PREPARE PERCENTILE ARRAYS
     const sleepHours = [];
@@ -122,12 +116,27 @@ const getBenchmark = async (req, res, next) => {
     latestPrediction.peer_benchmark = percentiles;
     await latestPrediction.save();
 
+    // 7. GENERATE CUSTOM INSIGHT MESSAGE
+    let insight_message = "Keep tracking to refine your baseline.";
+    if (userBurnout === 1) {
+      insight_message = "Your burnout risk is elevated. Prioritize recovery and take a break.";
+    } else if (userSleep > 0 && userSleep < 6) {
+      insight_message = "Your sleep is low. Getting 7+ hours will drastically improve focus.";
+    } else if (userProd >= 80) {
+      insight_message = "Outstanding productivity! You're operating at peak efficiency.";
+    } else if (userFocus >= 8) {
+      insight_message = "Excellent focus quality. Your deep work sessions are highly effective.";
+    } else if (percentiles.productivity_percentile > 50) {
+      insight_message = "You are maintaining a strong, steady rhythm. Keep it up!";
+    }
+
     res.status(200).json({
       success: true,
       data: {
         is_available: true,
         persona: latestPrediction.persona,
-        metrics: percentiles
+        metrics: percentiles,
+        insight_message: insight_message
       }
     });
 
