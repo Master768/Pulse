@@ -11,6 +11,108 @@ const DailyLog = require('../models/DailyLog');
 const Prediction = require('../models/Prediction');
 
 /**
+ * HELPER: Generate and Save Prediction
+ * Extracts metrics from log, queries ML API (or uses fallback), and saves to Prediction DB.
+ */
+const generateAndSavePrediction = async (log, userId, isEdited) => {
+  const mlPayload = {
+    sleep_hours: log.sleepHours || 7.0,
+    study_hours: log.studyHours || 4.0,
+    screen_time_hours: log.screenTimeHours || 4.0,
+    exercise_mins: log.exerciseMins || 30,
+    mood_score: log.moodScore || 5,
+    stress_level: log.stressLevel || 5,
+    caffeine_intake: log.caffeineIntake || 0,
+    water_litres: log.waterLitres || 2,
+    deep_focus_blocks: log.deepFocusBlocks || 0,
+    social_media_mins: log.socialMediaMins || 60,
+    focus_duration_mins: log.has_focus_session ? log.focus_duration_mins : 227,
+    focus_quality_score: log.has_focus_session ? log.focus_quality_score : 3.67,
+    distraction_level_encoded: log.has_focus_session ? log.distraction_level_encoded : 1,
+    day_of_week: log.dayOfWeek,
+    is_weekend: log.isWeekend ? 1 : 0
+  };
+
+  let mlResponse;
+  try {
+    const flaskUrl = process.env.FLASK_API_URL || 'http://127.0.0.1:5000/predict';
+    mlResponse = await axios.post(flaskUrl, mlPayload);
+  } catch (error) {
+    console.error(`❌ ML API Error: ${error.message} - Using Resilient Fallback`);
+    
+    let prodScore = 85; 
+    let risk = 'Low';
+    const posDetails = [];
+    const negDetails = [];
+
+    if (mlPayload.screen_time_hours > 6) {
+        prodScore -= (mlPayload.screen_time_hours - 6) * 5;
+        negDetails.push({ label: 'Screen Time', insight: 'High device usage is significantly draining your cognitive capacity.' });
+    }
+    if (mlPayload.stress_level > 3) {
+        prodScore -= (mlPayload.stress_level - 3) * 10;
+        risk = mlPayload.stress_level > 4 ? 'High' : 'Medium';
+        negDetails.push({ label: 'Stress Levels', insight: 'Elevated stress is creating cognitive friction.' });
+    }
+    if (mlPayload.sleep_hours < 7) {
+        prodScore -= 10;
+        negDetails.push({ label: 'Sleep Quality', insight: 'Sub-optimal sleep duration is preventing full recovery.' });
+    } else {
+        posDetails.push({ label: 'Sleep Hygiene', insight: 'Solid sleep duration is providing a strong foundation.' });
+    }
+
+    mlResponse = {
+      data: {
+        data: {
+          productivity_score: Math.max(0, Math.min(100, prodScore)),
+          burnout_risk: risk,
+          burnout_confidence_scores: { Low: 0.7, Medium: 0.2, High: 0.1 },
+          persona: risk === 'High' ? 'Overworked Achiever' : 'Balanced Optimizer',
+          cluster_id: risk === 'High' ? 2 : 1,
+          top_positive_factors_detailed: posDetails,
+          top_negative_factors_detailed: negDetails,
+          top_positive_factors: posDetails.map(d => d.label),
+          top_negative_factors: negDetails.map(d => d.label),
+          factor_contributions: [],
+          persona_reason: "Manual fallback calculation used based on metric thresholds."
+        }
+      }
+    };
+  }
+
+  const { 
+    productivity_score, burnout_risk, burnout_confidence_scores, 
+    persona, cluster_id, top_positive_factors, top_negative_factors,
+    top_positive_factors_detailed, top_negative_factors_detailed,
+    factor_contributions, persona_reason
+  } = mlResponse.data.data;
+
+  const prediction = await Prediction.findOneAndUpdate(
+    { logId: log._id },
+    {
+      userId: userId,
+      productivityScore: Math.round(productivity_score),
+      burnoutRisk: burnout_risk,
+      burnoutConfidence: burnout_confidence_scores,
+      primaryConfidence: burnout_confidence_scores[burnout_risk],
+      persona,
+      personaReason: persona_reason || "Consistent behavior detected.",
+      clusterId: cluster_id,
+      topPositiveFactors: top_positive_factors,
+      topNegativeFactors: top_negative_factors,
+      topPositiveFactorsDetailed: top_positive_factors_detailed || [],
+      topNegativeFactorsDetailed: top_negative_factors_detailed || [],
+      factorContributions: factor_contributions || [],
+      isEdited: isEdited,
+      date: log.date
+    },
+    { upsert: true, new: true }
+  );
+
+  return prediction;
+};
+
+/**
  * @desc    Create daily log and get prediction
  * @route   POST /api/logs
  * @access  Private
@@ -93,117 +195,9 @@ const createLog = async (req, res, next) => {
     }
 
     /**
-     * 3. ML API INTEGRATION
-     * We send the user's daily metrics to the Python ML API to calculate 
-     * productivity, burnout risk, and their performance "persona".
+     * 3. ML API INTEGRATION & SAVE PREDICTION
      */
-    const mlPayload = {
-      sleep_hours: sleepHours,
-      study_hours: studyHours,
-      screen_time_hours: screenTimeHours,
-      exercise_mins: exerciseMins,
-      mood_score: moodScore,
-      stress_level: stressLevel,
-      caffeine_intake: caffeineIntake,
-      water_litres: waterLitres,
-      deep_focus_blocks: deepFocusBlocks,
-      social_media_mins: socialMediaMins,
-      // Default values for focus session metrics if they aren't provided
-      focus_duration_mins: log.has_focus_session ? log.focus_duration_mins : 227,
-      focus_quality_score: log.has_focus_session ? log.focus_quality_score : 3.67,
-      distraction_level_encoded: log.has_focus_session ? log.distraction_level_encoded : 1,
-      day_of_week: dayOfWeek,
-      is_weekend: isWeekend ? 1 : 0
-    };
-
-    let mlResponse;
-    try {
-      // Call the external Python Flask API
-      const flaskUrl = process.env.FLASK_API_URL || 'http://127.0.0.1:5000/predict';
-      mlResponse = await axios.post(flaskUrl, mlPayload);
-    } catch (error) {
-      /**
-       * RESILIENT FALLBACK LOGIC
-       * If the ML API is down, we use a heuristic-based calculation in Node.js
-       * so the user still gets feedback without seeing an error.
-       */
-      console.error(`❌ ML API Error: ${error.message} - Using Resilient Fallback`);
-      
-      let prodScore = 85; 
-      let risk = 'Low';
-      const posDetails = [];
-      const negDetails = [];
-
-      // Manual Penalties for Sub-optimal Metrics
-      if (mlPayload.screen_time_hours > 6) {
-          prodScore -= (mlPayload.screen_time_hours - 6) * 5;
-          negDetails.push({ label: 'Screen Time', insight: 'High device usage is significantly draining your cognitive capacity.' });
-      }
-      if (mlPayload.stress_level > 3) {
-          prodScore -= (mlPayload.stress_level - 3) * 10;
-          risk = mlPayload.stress_level > 4 ? 'High' : 'Medium';
-          negDetails.push({ label: 'Stress Levels', insight: 'Elevated stress is creating cognitive friction.' });
-      }
-      if (mlPayload.sleep_hours < 7) {
-          prodScore -= 10;
-          negDetails.push({ label: 'Sleep Quality', insight: 'Sub-optimal sleep duration is preventing full recovery.' });
-      } else {
-          posDetails.push({ label: 'Sleep Hygiene', insight: 'Solid sleep duration is providing a strong foundation.' });
-      }
-
-      mlResponse = {
-        data: {
-          data: {
-            productivity_score: Math.max(0, Math.min(100, prodScore)),
-            burnout_risk: risk,
-            burnout_confidence_scores: { Low: 0.7, Medium: 0.2, High: 0.1 },
-            persona: risk === 'High' ? 'Overworked Achiever' : 'Balanced Optimizer',
-            cluster_id: risk === 'High' ? 2 : 1,
-            top_positive_factors_detailed: posDetails,
-            top_negative_factors_detailed: negDetails,
-            top_positive_factors: posDetails.map(d => d.label),
-            top_negative_factors: negDetails.map(d => d.label),
-            factor_contributions: [],
-            persona_reason: "Manual fallback calculation used based on metric thresholds."
-          }
-        }
-      };
-    }
-
-    // Extract prediction data from the response (either API or Fallback)
-    const { 
-      productivity_score, burnout_risk, burnout_confidence_scores, 
-      persona, cluster_id, top_positive_factors, top_negative_factors,
-      top_positive_factors_detailed, top_negative_factors_detailed,
-      factor_contributions, persona_reason
-    } = mlResponse.data.data;
-
-    /**
-     * 4. SAVE PREDICTION
-     * Predictions are stored separately from logs to allow for easy history tracking
-     * and visualization on the dashboard.
-     */
-    const prediction = await Prediction.findOneAndUpdate(
-      { logId: log._id },
-      {
-        userId: req.user.id,
-        productivityScore: Math.round(productivity_score),
-        burnoutRisk: burnout_risk,
-        burnoutConfidence: burnout_confidence_scores,
-        primaryConfidence: burnout_confidence_scores[burnout_risk],
-        persona,
-        personaReason: persona_reason || "Consistent behavior detected.",
-        clusterId: cluster_id,
-        topPositiveFactors: top_positive_factors,
-        topNegativeFactors: top_negative_factors,
-        topPositiveFactorsDetailed: top_positive_factors_detailed || [],
-        topNegativeFactorsDetailed: top_negative_factors_detailed || [],
-        factorContributions: factor_contributions || [],
-        isEdited: wasAlreadyPresent,
-        date: log.date
-      },
-      { upsert: true, new: true }
-    );
+    const prediction = await generateAndSavePrediction(log, req.user.id, wasAlreadyPresent);
 
     res.status(201).json({
       success: true,
@@ -302,20 +296,7 @@ const addFocusData = async (req, res, next) => {
      * After focus data changes, we must update the ML prediction to reflect
      * the new session impact.
      */
-    const mlPayload = {
-      sleep_hours: log.is_completed ? log.sleepHours : 7.0,
-      study_hours: log.is_completed ? log.studyHours : 4.0,
-      screen_time_hours: log.is_completed ? log.screenTimeHours : 4.0,
-      // ... more metrics ...
-      focus_duration_mins: log.focus_duration_mins,
-      focus_quality_score: log.focus_quality_score,
-      distraction_level_encoded: log.distraction_level_encoded,
-      day_of_week: log.dayOfWeek,
-      is_weekend: log.isWeekend ? 1 : 0
-    };
-
-    // (ML Call and Sync logic follows same pattern as createLog)
-    // For brevity in documentation, we assume the ML logic is encapsulated or follows the same resilient flow.
+    await generateAndSavePrediction(log, req.user.id, true);
     
     res.status(200).json({
       success: true,
