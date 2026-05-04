@@ -70,6 +70,8 @@ const LandingPage = () => {
                 <p className="text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
       </section>
 
       {/* --- PERSONA ROADMAP SECTION --- */}
