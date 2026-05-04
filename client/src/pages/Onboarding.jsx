@@ -14,6 +14,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { 
+  User, CheckCircle2, Moon, Monitor, Clock, 
+  ArrowRight, Sparkles, LayoutPanelTop, ChevronLeft
+} from 'lucide-react';
 
 const Onboarding = () => {
   const { user, updateUser } = useAuth();
