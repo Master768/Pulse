@@ -12,8 +12,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, Database, Sparkles, LogOut, 
-  ChevronRight, Download, Sliders, ShieldCheck,
+  User, Database, Sparkles, 
+  Download, Sliders, ShieldCheck,
   CheckCircle2, AlertCircle, Edit3, X, Save,
   Droplets, Coffee, Smartphone
 } from 'lucide-react';

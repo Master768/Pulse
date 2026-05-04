@@ -15,8 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { 
-  User, CheckCircle2, Moon, Monitor, Clock, 
-  ArrowRight, Sparkles, LayoutPanelTop, ChevronLeft
+  User, CheckCircle2, Clock, 
+  ArrowRight, Sparkles, ChevronLeft
 } from 'lucide-react';
 
 const Onboarding = () => {

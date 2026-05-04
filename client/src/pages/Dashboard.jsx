@@ -17,8 +17,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { 
   Zap, TrendingUp, AlertCircle, 
-  Calendar, Settings, ArrowUpRight, Brain, Sparkles, 
-  Info, LayoutGrid, CheckCircle2, PlusCircle
+  Calendar, Settings, Brain, Sparkles, 
+  Info, CheckCircle2, PlusCircle
 } from 'lucide-react';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -164,14 +164,7 @@ const Dashboard = () => {
 
   const trajectory = getTrajectory();
 
-  const handleUpdateGoal = async (newGoal) => {
-    try {
-      await api.patch('/auth/onboarding', { goalPersona: newGoal });
-      window.location.reload(); // Refresh to update user context
-    } catch (err) {
-      console.error("Failed to update goal:", err);
-    }
-  };
+
 
   const goalSuggestions = {
     'Balanced Optimizer': [
