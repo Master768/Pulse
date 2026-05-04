@@ -163,6 +163,13 @@ class PersonaEngine(BasePredictor):
         elif study < 2 and stress < 2:
             persona = "Passive Recovery"
             reason = "Low engagement paired with low stress indicates a rest day."
+        
+        # Check for Burnout Recovery (Special state)
+        # This is often passed in via the 'context' if we had previous high risk
+        # For now, let's look at the data signature of someone who crashed
+        if study < 1 and stress < 3 and sleep > 9:
+            persona = "Burnout Recovery"
+            reason = "Detected an extended sleep cycle and low activity following a high-output phase."
 
         return persona, cluster_id, reason
 

@@ -32,7 +32,10 @@ const sendTokenResponse = (user, statusCode, res) => {
       name: user.name,
       email: user.email,
       persona: user.persona,
-      onboardingComplete: user.onboardingComplete
+      onboardingComplete: user.onboardingComplete,
+      goalPersona: user.goalPersona,
+      streakCount: user.streakCount,
+      lastBalancedDate: user.lastBalancedDate
     }
   });
 };
@@ -119,5 +122,30 @@ const updateOnboarding = async (req, res, next) => {
   }
 };
 
-module.exports = { signUp, login, updateOnboarding };
+/**
+ * GET ME
+ * GET /api/auth/me
+ */
+const getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        persona: user.persona,
+        onboardingComplete: user.onboardingComplete,
+        goalPersona: user.goalPersona,
+        streakCount: user.streakCount,
+        lastBalancedDate: user.lastBalancedDate
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { signUp, login, updateOnboarding, getMe };
 

@@ -21,15 +21,23 @@ import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 const Settings = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   
   // --- STATE ---
   const [updating, setUpdating] = useState(false); // Loading state for API calls
   const [feedback, setFeedback] = useState(null); // Success/Error snackbar content
   const [isEditingName, setIsEditingName] = useState(false); // Toggle for inline name editing
   const [newName, setNewName] = useState(user?.name || '');
+  const [selectedGoal, setSelectedGoal] = useState(user?.goalPersona || 'Balanced Optimizer');
 
-  const personas = ['Balanced', 'High Performer', 'High Stress', 'Low Sleep'];
+  // SYNC: Ensure the local selection matches the global state when the user object is loaded/updated
+  React.useEffect(() => {
+    if (user?.goalPersona) {
+      setSelectedGoal(user.goalPersona);
+    }
+  }, [user]);
+
+  const personas = ['Balanced Optimizer', 'High Performer', 'Under Pressure', 'Restricted Sleep'];
 
   /**
    * UPDATE NAME
@@ -193,26 +201,48 @@ const Settings = () => {
         <div className="lg:col-span-8 space-y-8">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
-              {/* SYSTEM PERSONA: Influences ML analysis weightage */}
-              <div className="pro-card rounded-[2.5rem] p-10 group bg-white border border-slate-100">
+              {/* GOAL PERSONA: What the user wants to achieve */}
+              <div className="pro-card rounded-[2.5rem] p-10 group bg-white border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-4 mb-10">
-                  <div className="p-3.5 bg-violet-50 text-violet-500 rounded-[1.25rem] shadow-sm"><Sparkles size={22} /></div>
-                  <h4 className="text-xl font-bold text-slate-900">System Personality</h4>
+                  <div className="p-3.5 bg-primary/10 text-primary rounded-[1.25rem] shadow-sm"><Sparkles size={22} /></div>
+                  <h4 className="text-xl font-bold text-slate-900">Performance Goal</h4>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Set Optimization Target</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Set Your Target State</p>
+                  <div className="grid grid-cols-1 gap-2 mb-6">
                     {personas.map((p) => (
                       <button 
                         key={p}
                         disabled={updating}
-                        onClick={() => handleUpdatePersona(p)}
-                        className={`py-3 px-4 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all border ${user?.persona === p ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-slate-300'}`}
+                        onClick={() => setSelectedGoal(p)}
+                        className={`py-3 px-4 rounded-xl text-[10px] font-bold uppercase tracking-tight transition-all border text-left flex justify-between items-center ${selectedGoal === p ? 'bg-primary border-primary text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'}`}
                       >
                         {p}
+                        {selectedGoal === p && <CheckCircle2 size={14} />}
                       </button>
                     ))}
                   </div>
+
+                  {/* SAVE BUTTON FOR PERSONA */}
+                  <button 
+                    disabled={updating || selectedGoal === user?.goalPersona}
+                    onClick={async () => {
+                      setUpdating(true);
+                      try {
+                        await api.patch('/auth/onboarding', { goalPersona: selectedGoal });
+                        updateUser({ goalPersona: selectedGoal });
+                        setFeedback({ type: 'success', msg: `Target Goal saved as ${selectedGoal}` });
+                        setTimeout(() => setFeedback(null), 3000);
+                      } catch (err) {
+                        setFeedback({ type: 'error', msg: 'Update failed' });
+                      } finally {
+                        setUpdating(false);
+                      }
+                    }}
+                    className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedGoal !== user?.goalPersona ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                  >
+                    {updating ? 'Processing...' : 'Commit Performance Goal'}
+                  </button>
                 </div>
               </div>
 

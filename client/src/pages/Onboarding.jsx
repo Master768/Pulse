@@ -13,12 +13,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { 
-  User, CheckCircle2, Moon, Monitor, Clock, 
-  ArrowRight, Sparkles, LayoutPanelTop, ChevronLeft
-} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Onboarding = () => {
+  const { user, updateUser } = useAuth();
   // --- STATE ---
   const [step, setStep] = useState(1); // Current wizard page
   const [direction, setDirection] = useState(0); // Animation direction (1 for forward, -1 for back)
@@ -29,7 +27,8 @@ const Onboarding = () => {
     sleepGoal: 8, 
     screenLimit: 4, 
     focusTarget: 3,
-    mainGoal: 'productivity'
+    mainGoal: 'productivity',
+    goalPersona: 'Balanced Optimizer'
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -55,6 +54,13 @@ const Onboarding = () => {
       // We use PATCH because the user record already exists (created at signup); 
       // we are just filling in the missing pulse profile data.
       await api.patch('/auth/onboarding', { ...formData, onboardingComplete: true });
+      
+      // SYNC: Update the global auth context so the Dashboard sees the new goal
+      updateUser({ 
+        ...formData, 
+        onboardingComplete: true 
+      });
+
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
@@ -66,8 +72,16 @@ const Onboarding = () => {
 
   const steps = [
     { title: "Personal", icon: <User size={18} /> },
-    { title: "Goals", icon: <Clock size={18} /> },
+    { title: "Benchmarks", icon: <Clock size={18} /> },
+    { title: "Persona", icon: <Sparkles size={18} /> },
     { title: "Complete", icon: <CheckCircle2 size={18} /> }
+  ];
+
+  const personas = [
+    { name: 'Balanced Optimizer', desc: 'Sustainable productivity and high well-being.' },
+    { name: 'High Performer', desc: 'Maximum output and deep focus blocks.' },
+    { name: 'Under Pressure', desc: 'Manage high stress while maintaining output.' },
+    { name: 'Restricted Sleep', desc: 'Optimize performance despite limited rest.' }
   ];
 
   /**
@@ -87,8 +101,8 @@ const Onboarding = () => {
         {/* PROGRESS STEPPER: Visual indicator of current progress */}
         <div className="mb-12">
            <div className="flex justify-between items-center mb-4">
-              <span className="text-xs font-bold text-primary uppercase tracking-wider">Step {step} of 3</span>
-              <span className="text-xs font-bold text-slate-400">{Math.round((step/3)*100)}% Complete</span>
+              <span className="text-xs font-bold text-primary uppercase tracking-wider">Step {step} of {steps.length}</span>
+              <span className="text-xs font-bold text-slate-400">{Math.round((step/steps.length)*100)}% Complete</span>
            </div>
            {/* Progress Bar */}
            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
@@ -148,8 +162,8 @@ const Onboarding = () => {
                    transition={{ duration: 0.4 }} className="space-y-10"
                 >
                   <div>
-                    <h2 className="text-3xl font-bold text-slate-900 mb-4">Set your goals</h2>
-                    <p className="text-lg text-slate-500">Establishing benchmarks helps the system track your recovery and focus.</p>
+                    <h2 className="text-3xl font-bold text-slate-900 mb-4">Set your benchmarks</h2>
+                    <p className="text-lg text-slate-500">Establishing these metrics helps the system track your recovery and focus.</p>
                   </div>
 
                   <div className="space-y-12 max-w-xl">
@@ -172,10 +186,48 @@ const Onboarding = () => {
                 </motion.div>
               )}
 
-              {/* STEP 3: SUCCESS & COMPLETION */}
+              {/* STEP 3: PERFORMANCE PERSONA GOAL */}
               {step === 3 && (
                 <motion.div 
                    key="step3" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
+                   transition={{ duration: 0.4 }} className="space-y-10"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                        Target Performance <Sparkles className="text-primary" size={24} />
+                      </h2>
+                      <p className="text-lg text-slate-500">Select the behavioral style you want the AI to optimize for.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     {personas.map((p, i) => (
+                        <button 
+                           key={i}
+                           onClick={() => setFormData({...formData, goalPersona: p.name})}
+                           className={`p-8 rounded-[2rem] border text-left transition-all group relative overflow-hidden ${formData.goalPersona === p.name ? 'bg-primary border-primary text-white shadow-2xl scale-[1.02]' : 'bg-slate-50/50 border-slate-100 hover:border-primary/20 hover:bg-white'}`}
+                        >
+                           <div className="relative z-10">
+                              <div className="flex justify-between items-center mb-4">
+                                 <h4 className={`text-sm font-black uppercase tracking-[0.1em] ${formData.goalPersona === p.name ? 'text-white' : 'text-slate-900'}`}>{p.name}</h4>
+                                 {formData.goalPersona === p.name ? <CheckCircle2 size={20} /> : <div className="w-5 h-5 rounded-full border-2 border-slate-200" />}
+                              </div>
+                              <p className={`text-xs leading-relaxed font-medium ${formData.goalPersona === p.name ? 'text-white/80' : 'text-slate-500'}`}>{p.desc}</p>
+                           </div>
+                           {formData.goalPersona === p.name && (
+                             <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+                           )}
+                        </button>
+                     ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 4: SUCCESS & COMPLETION */}
+              {step === 4 && (
+                <motion.div 
+                   key="step4" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" 
                    transition={{ duration: 0.4 }} className="text-center py-10"
                 >
                   <div className="inline-flex p-8 bg-success/10 text-success rounded-3xl mb-8">
@@ -198,7 +250,7 @@ const Onboarding = () => {
           </div>
 
           {/* Stepper Controls */}
-          {step < 3 && (
+          {step < 4 && (
             <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center">
                <button onClick={handleBack} disabled={step === 1} className="flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-900 disabled:opacity-0 transition-all">
                  <ChevronLeft size={18} /> Previous

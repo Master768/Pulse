@@ -70,8 +70,38 @@ const LandingPage = () => {
                 <p className="text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
+      </section>
+
+      {/* --- PERSONA ROADMAP SECTION --- */}
+      <section className="py-32 px-6 bg-slate-900 text-white overflow-hidden relative">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-20">
+             <h2 className="text-4xl md:text-5xl font-bold mb-6">The Persona Engine</h2>
+             <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+               Pulse doesn't just track metrics; it maps your behavior into cognitive profiles. 
+               Set your goal, and let the engine guide you there.
+             </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { name: 'Balanced Optimizer', desc: 'The gold standard. Sustainable output paired with optimal recovery and health markers.' },
+              { name: 'High Performer', desc: 'Maximum efficiency. Designed for users in high-output seasons who prioritize deep work blocks.' },
+              { name: 'Under Pressure', desc: 'The warning state. High productivity that is currently being sustained by high stress.' },
+              { name: 'Restricted Sleep', desc: 'The recovery bottleneck. Identifying when lack of rest is the primary driver of fatigue.' },
+              { name: 'Burnout Recovery', desc: 'The restoration phase. A specialized mode focused on rebuilding cognitive capacity.' }
+            ].map((p, i) => (
+              <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                <div className="w-12 h-12 rounded-2xl bg-primary/20 text-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                   <Sparkles size={24} />
+                </div>
+                <h4 className="text-xl font-bold mb-4 uppercase tracking-widest">{p.name}</h4>
+                <p className="text-slate-400 leading-relaxed font-medium">{p.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
+        <div className="absolute -right-32 -bottom-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
       </section>
 
       {/* --- CALL TO ACTION (CTA) ---

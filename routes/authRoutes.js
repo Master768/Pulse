@@ -7,7 +7,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { signUp, login, updateOnboarding } = require('../controllers/authController');
+const { signUp, login, updateOnboarding, getMe } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 // PUBLIC: Routes anyone can access
@@ -15,6 +15,7 @@ router.post('/signup', signUp);
 router.post('/login', login);
 
 // PRIVATE: Routes requiring a valid JWT token (via protect middleware)
+router.get('/me', protect, getMe);
 router.patch('/onboarding', protect, updateOnboarding);
 
 module.exports = router;

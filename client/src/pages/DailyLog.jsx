@@ -42,7 +42,10 @@ const InputBlock = ({ icon, title, value, unit, min, max, step, field, onChange,
         step={step} 
         value={value} 
         onChange={(e) => onChange(field, parseFloat(e.target.value))}
-        className="w-full h-2.5 bg-slate-100 rounded-full accent-primary cursor-pointer appearance-none transition-all hover:bg-slate-200"
+        className="w-full h-2.5 rounded-full accent-primary cursor-pointer appearance-none transition-all"
+        style={{
+          background: `linear-gradient(to right, #2D7D72 0%, #2D7D72 ${(value - min) / (max - min) * 100}%, #f1f5f9 ${(value - min) / (max - min) * 100}%, #f1f5f9 100%)`
+        }}
       />
       <div className="flex justify-between mt-3 px-1">
         <span className="text-[10px] font-bold text-slate-300">0</span>

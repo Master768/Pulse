@@ -142,16 +142,92 @@ const Dashboard = () => {
       };
     }
   };
-
   const risk = getRiskStatus(data.latest.burnoutRisk);
   const insight = getInsightContent(data.latest.productivityScore, data.latest.burnoutRisk);
 
+  // --- TRAJECTORY ENGINE ---
+  const getTrajectory = () => {
+    const trends = data.summary.trends.slice(-3);
+    if (trends.length < 2) return null;
+    const last = trends[trends.length - 1].productivityScore;
+    const prev = trends[trends.length - 2].productivityScore;
+    const diff = last - prev;
+    
+    if (diff < -15 && data.latest.burnoutRisk === 'High') {
+      return { status: 'Danger', msg: 'Sharp decline detected. You are trending towards a burnout crash.', color: 'text-rose-500', bg: 'bg-rose-50' };
+    }
+    if (diff > 10 && data.latest.burnoutRisk === 'Low') {
+      return { status: 'Improving', msg: 'Productivity is scaling sustainably. Keep this momentum!', color: 'text-emerald-500', bg: 'bg-emerald-50' };
+    }
+    return null;
+  };
+
+  const trajectory = getTrajectory();
+
+  const handleUpdateGoal = async (newGoal) => {
+    try {
+      await api.patch('/auth/onboarding', { goalPersona: newGoal });
+      window.location.reload(); // Refresh to update user context
+    } catch (err) {
+      console.error("Failed to update goal:", err);
+    }
+  };
+
+  const goalSuggestions = {
+    'Balanced Optimizer': [
+      'Maintain consistent sleep/wake times to stabilize rhythm.',
+      'Schedule 15-minute "unplugged" breaks every 3 hours.',
+      'Prioritize hydration (2.5L+) to avoid energy crashes.'
+    ],
+    'High Performer': [
+      'Schedule 90-minute deep work blocks with zero notifications.',
+      'Limit "Social" screen time to under 45 mins on work days.',
+      'Ensure 7.5h+ sleep to facilitate neural recovery.'
+    ],
+    'Under Pressure': [
+      'Strictly follow 25/5 Pomodoro rhythm to prevent fatigue.',
+      'Shift to low-intensity tasks if Burnout Risk hits Medium.',
+      'Practice 5-minute deep breathing between focus sessions.'
+    ],
+    'Restricted Sleep': [
+      'Front-load complex tasks within 3 hours of waking up.',
+      'Use strategic 20-minute power naps to offset deficit.',
+      'Cap caffeine at 400mg and stop 8h before bed.'
+    ]
+  };
+
+  const suggestions = goalSuggestions[user?.goalPersona] || goalSuggestions['Balanced Optimizer'];
+
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto animate-fade-in text-[#111827]">
+      {/* --- TRAJECTORY WARNING --- */}
+      {trajectory && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`mb-8 p-6 rounded-2xl flex items-center gap-4 border shadow-sm ${trajectory.bg}`}
+        >
+          <div className={`p-3 rounded-xl bg-white shadow-sm ${trajectory.color}`}>
+            <AlertCircle size={24} />
+          </div>
+          <div>
+             <h4 className={`text-sm font-black uppercase tracking-widest ${trajectory.color}`}>{trajectory.status} Trajectory</h4>
+             <p className="text-slate-600 font-bold">{trajectory.msg}</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* --- DASHBOARD HEADER --- */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
-        <div>
-           <p className="text-sm font-bold text-primary uppercase tracking-wider mb-2">Overview</p>
+        <div className="flex-1">
+           <div className="flex items-center gap-3 mb-2">
+             <p className="text-sm font-bold text-primary uppercase tracking-wider">Overview</p>
+             {user?.streakCount > 0 && (
+               <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-[10px] font-black uppercase tracking-widest animate-bounce">
+                 <Sparkles size={12} /> {user.streakCount} Day Balanced Streak
+               </div>
+             )}
+           </div>
            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">{getGreeting()}, {user?.name.split(' ')[0]}</h1>
         </div>
         <div className="flex items-center gap-4">
@@ -207,27 +283,46 @@ const Dashboard = () => {
           {/* PERSONA CARD: Categorizes behavioral style */}
           <div className="md:col-span-4 bg-white rounded-[2.5rem] p-8 flex flex-col justify-between shadow-card relative overflow-hidden group border border-primary/10" style={{ backgroundColor: '#ffffff' }}>
              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-10">
+                <div className="flex justify-between items-start mb-6">
                    <div className="p-3 bg-primary/10 text-primary rounded-2xl shadow-sm group-hover:bg-primary group-hover:text-white transition-all duration-300"><Sparkles size={24} /></div>
                    <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 opacity-70">Behavior Profile</span>
                 </div>
-                <p className="text-[10px] font-extrabold text-[#111827] uppercase tracking-[0.2em] mb-2 opacity-60">Status: {data.latest.persona}</p>
-                <h2 className="text-3xl font-extrabold text-[#111827] mb-4 leading-tight">
-                  {data.latest.persona || 'Steady Performer'}
-                </h2>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6">
-                  {data.latest.personaReason || "No anomalies detected in your performance entropy today."}
-                </p>
-                <div className="mt-auto pt-4 border-t border-slate-50">
-                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Profile Alignment</p>
-                   <div className="flex items-center gap-2">
-                     <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                     <span className="text-[10px] font-bold text-slate-600 uppercase">Target Goal: {user?.persona || 'Balanced'}</span>
+                <div className="mb-6">
+                  <p className="text-[10px] font-extrabold text-[#111827] uppercase tracking-[0.2em] mb-2 opacity-60">Status: {data.latest.persona}</p>
+                  <h2 className="text-3xl font-extrabold text-[#111827] mb-2 leading-tight">
+                    {data.latest.persona || 'Steady Performer'}
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                    {data.latest.personaReason || "No anomalies detected in your performance entropy today."}
+                  </p>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-50">
+                   <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Target Goal</p>
+                      <div className="flex items-center gap-2">
+                        <div className={`h-1.5 w-1.5 rounded-full bg-primary ${data.latest.persona === user?.goalPersona ? 'animate-ping' : ''}`} />
+                        <span className="text-[10px] font-bold text-slate-600 uppercase">{user?.goalPersona || 'Balanced Optimizer'}</span>
+                      </div>
+                   </div>
+
+                   <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Roadmap to your Goal</p>
+                      <div className="space-y-3">
+                        {suggestions.map((s, i) => (
+                          <div key={i} className="flex gap-3">
+                            <div className="mt-1 w-1 h-1 rounded-full bg-primary flex-shrink-0" />
+                            <p className="text-[11px] font-medium text-slate-500 leading-tight">{s}</p>
+                          </div>
+                        ))}
+                      </div>
                    </div>
                 </div>
              </div>
              <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-primary/5 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
           </div>
+
+
 
         {/* --- POSITIVE AND NEGATIVE IMPACT FACTORS --- */}
         <div className="md:col-span-8 pro-card rounded-3xl p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -311,10 +406,10 @@ const Dashboard = () => {
                  {/* Slice to ensure we only show the last 7 entries for the sparkline */}
                  <AreaChart data={data.summary.trends.slice(-7)}>
                     <defs>
-                      <linearGradient id="chartColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2D7D72" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#2D7D72" stopOpacity={0}/>
-                      </linearGradient>
+                       <linearGradient id="chartColor" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor="#2D7D72" stopOpacity={0.1}/>
+                         <stop offset="95%" stopColor="#2D7D72" stopOpacity={0}/>
+                       </linearGradient>
                     </defs>
                     <Area 
                       type="monotone" 
@@ -334,4 +429,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Dashboard;

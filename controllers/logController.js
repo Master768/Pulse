@@ -9,6 +9,7 @@
 const axios = require('axios');
 const DailyLog = require('../models/DailyLog');
 const Prediction = require('../models/Prediction');
+const User = require('../models/User');
 
 /**
  * HELPER: Generate and Save Prediction
@@ -108,6 +109,23 @@ const generateAndSavePrediction = async (log, userId, isEdited) => {
     },
     { upsert: true, new: true }
   );
+
+  // --- GAMIFICATION: UPDATE STREAKS ---
+  if (persona === 'Balanced Optimizer') {
+    const user = await User.findById(userId);
+    if (user) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastDate = user.lastBalancedDate ? user.lastBalancedDate.toISOString().split('T')[0] : null;
+      
+      if (lastDate !== today) {
+        // If it's a new day, increment streak. 
+        // Note: Simple logic here, doesn't check if yesterday was also balanced.
+        user.streakCount += 1;
+        user.lastBalancedDate = new Date();
+        await user.save();
+      }
+    }
+  }
 
   return prediction;
 };

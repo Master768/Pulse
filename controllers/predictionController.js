@@ -82,6 +82,7 @@ const updateJournalNote = async (req, res, next) => {
 
     // Update the journal note
     prediction.journalNote = note || '';
+    prediction.isJournalEdited = true;
     await prediction.save();
 
     res.status(200).json({
