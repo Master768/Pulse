@@ -119,14 +119,14 @@ FEATURE_METADATA = {
 WEIGHT_MULTIPLIERS = {
     'water_litres': 2.5,     # 1L = +2.5 points boost
     'deep_focus_blocks': 4.0, # 1 Block = +4 points boost
-    'caffeine_intake': -0.02, # Penalty per mg over threshold
+    'caffeine_intake': -2.0, # Penalty per cup over threshold
     'sleep_hours': 1.5,      # Multiplier for sleep impact compared to baseline
 }
 
 # SYSTEM THRESHOLDS
 # Critical limits used by the Explainer and Synergy engines.
 SYNERGY_RULES = {
-    'caffeine_threshold': 400, # mg (Standard daily limit)
+    'caffeine_threshold': 4, # cups (Standard daily limit)
     'water_target': 2.5,       # litres for full hydration boost
     'sleep_deprived': 6.0,     # hours threshold for cognitive penalty
     'social_media_threshold': 120, # minutes (Threshold for "High Consumption")

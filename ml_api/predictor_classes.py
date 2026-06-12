@@ -4,6 +4,25 @@ import numpy as np
 import os
 from constants import CORE_FEATURES, CLASSIFIER_FEATURES
 
+def safe_scalar(df, col, default=0.0):
+    """Safely extracts a scalar value from a DataFrame, converting numpy types and guarding against NaN."""
+    if col not in df.columns:
+        return default
+    val = df[col].values[0]
+    if hasattr(val, 'item'):
+        # Verify it's a scalar or single element to prevent ValueError
+        if not hasattr(val, 'size') or val.size == 1:
+            val = val.item()
+    import pandas as pd
+    if pd.isna(val):
+        return default
+    # Convert numpy types to native Python scalar types
+    if isinstance(val, (np.integer, int)):
+        return int(val)
+    if isinstance(val, (np.floating, float)):
+        return float(val)
+    return val
+
 """
  BASE PREDICTOR CLASS
  A helper class that handles common operations like loading serialized model files (.pkl).
@@ -45,12 +64,12 @@ class ProductivityPredictor(BasePredictor):
         X_sc = self.scaler.transform(df[CORE_FEATURES])
         base_score = self.model.predict(X_sc)[0]
         
-        # Extract individual metrics for heuristic adjustments
-        stress = df['stress_level'].values[0]
-        screen_time = df['screen_time_hours'].values[0]
-        water = df['water_litres'].values[0]
-        caffeine = df['caffeine_intake'].values[0]
-        deep_focus = df['deep_focus_blocks'].values[0]
+        # Extract individual metrics for heuristic adjustments safely
+        stress = safe_scalar(df, 'stress_level')
+        screen_time = safe_scalar(df, 'screen_time_hours')
+        water = safe_scalar(df, 'water_litres')
+        caffeine = safe_scalar(df, 'caffeine_intake')
+        deep_focus = safe_scalar(df, 'deep_focus_blocks')
         
         # 1. NEGATIVE CORRECTIONS (Penalize habits that lower cognitive capacity)
         penalty = 0
@@ -59,7 +78,7 @@ class ProductivityPredictor(BasePredictor):
         
         # 2. CAFFEINE JITTER (Applies a penalty if usage exceeds safe thresholds)
         if caffeine > SYNERGY_RULES['caffeine_threshold']:
-            penalty += (caffeine - SYNERGY_RULES['caffeine_threshold']) * abs(WEIGHT_MULTIPLIERS['caffeine_intake']) * 10
+            penalty += (caffeine - SYNERGY_RULES['caffeine_threshold']) * abs(WEIGHT_MULTIPLIERS['caffeine_intake'])
             
         # 3. POSITIVE BOOSTS (Reward healthy habits)
         boost = 0
@@ -107,8 +126,8 @@ class BurnoutClassifier(BasePredictor):
         risk_label = self.label_encoder.inverse_transform([np.argmax(probs)])[0]
         
         # Map probabilities to human-readable labels
-        confidence_map = {label: round(float(prob), 2) for label, prob in zip(self.label_encoder.classes_, probs)}
-        return risk_label, confidence_map
+        confidence_map = {str(label): float(round(float(prob), 2)) for label, prob in zip(self.label_encoder.classes_, probs)}
+        return str(risk_label), confidence_map
 
 """
  PERSONA ENGINE
@@ -147,9 +166,9 @@ class PersonaEngine(BasePredictor):
 
         # Step 2: HEURISTIC OVERRIDES (The "Reality Check" Layer)
         # This ensures the persona accurately reflects immediate extreme behavior.
-        stress = df['stress_level'].values[0]
-        sleep = df['sleep_hours'].values[0]
-        study = df['study_hours'].values[0]
+        stress = safe_scalar(df, 'stress_level')
+        sleep = safe_scalar(df, 'sleep_hours')
+        study = safe_scalar(df, 'study_hours')
         
         if stress > 4:
             persona = "High Pressure"
@@ -164,7 +183,7 @@ class PersonaEngine(BasePredictor):
             persona = "Passive Recovery"
             reason = "Low engagement paired with low stress indicates a rest day."
 
-        return persona, cluster_id, reason
+        return str(persona), int(cluster_id), str(reason)
 
 """
  PULSE EXPLAINER
@@ -192,8 +211,9 @@ class PulseExplainer:
         
         contributions = []
         for i, feat in enumerate(CORE_FEATURES):
-            val = df[feat].values[0]
+            val = safe_scalar(df, feat)
             impact = coefs[i] * X_sc[i]
+            impact = float(impact) if np.isfinite(impact) else 0.0
             
             # Incorporate explicit weights into the explanation visibility
             if feat == 'water_litres':
@@ -201,15 +221,18 @@ class PulseExplainer:
             elif feat == 'deep_focus_blocks':
                 impact += val * WEIGHT_MULTIPLIERS['deep_focus_blocks']
             elif feat == 'caffeine_intake' and val > SYNERGY_RULES['caffeine_threshold']:
-                impact -= (val - SYNERGY_RULES['caffeine_threshold']) * 0.2
+                impact += (val - SYNERGY_RULES['caffeine_threshold']) * WEIGHT_MULTIPLIERS['caffeine_intake']
             elif feat == 'social_media_mins' and val < SYNERGY_RULES['social_media_threshold']:
                 impact = abs(impact) if impact < 0 else impact + 2.0 
                 
+            avg = FEATURE_AVERAGES.get(feat, 0)
+            if hasattr(avg, 'item'): avg = avg.item()
+
             contributions.append({
                 'feature': feat,
-                'impact': round(impact, 2),
+                'impact': float(round(impact, 2)),
                 'value': val,
-                'avg': FEATURE_AVERAGES.get(feat, 0)
+                'avg': avg
             })
             
         # Select key insights to show the user
@@ -222,19 +245,22 @@ class PulseExplainer:
             feat = c['feature']
             if feat not in FEATURE_METADATA: continue
             meta = FEATURE_METADATA[feat]
-            impact_str = f"{'+' if c['impact'] >=0 else ''}{c['impact']} pts"
+            impact_val = float(c['impact'])
+            if not np.isfinite(impact_val):
+                impact_val = 0.0
+            impact_str = f"{'+' if impact_val >=0 else ''}{round(impact_val, 2)} pts"
             
-            if c['impact'] > 0 and len(pos_details) < 3:
+            if impact_val > 0 and len(pos_details) < 3:
                 pos_details.append({
                     'label': meta['label'],
                     'insight': f"{meta['positive']} ({impact_str})",
-                    'impact': c['impact']
+                    'impact': impact_val
                 })
-            elif c['impact'] < 0 and len(neg_details) < 3:
+            elif impact_val < 0 and len(neg_details) < 3:
                 neg_details.append({
                     'label': meta['label'],
                     'insight': f"{meta['negative']} ({impact_str})",
-                    'impact': c['impact']
+                    'impact': impact_val
                 })
                 
         return pos_details, neg_details, contributions
