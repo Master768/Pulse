@@ -24,12 +24,14 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [journalText, setJournalText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleOpenJournal = (item) => {
     setSelectedLog(item);
     setJournalText(item.journalNote || '');
+    setIsEditing(!item.journalNote); // Default to editing if no note exists
     setIsModalOpen(true);
   };
 
@@ -39,9 +41,10 @@ const Reports = () => {
     try {
       await api.put(`/predictions/${selectedLog._id}/journal`, { note: journalText });
       setData(prevData => prevData.map(item => 
-        item._id === selectedLog._id ? { ...item, journalNote: journalText } : item
+        item._id === selectedLog._id ? { ...item, journalNote: journalText, isJournalEdited: true } : item
       ));
-      setIsModalOpen(false);
+      setIsEditing(false);
+      // Don't close modal immediately, let user see the saved state
     } catch (err) {
       console.error("Failed to save journal:", err);
     } finally {
@@ -218,7 +221,7 @@ const Reports = () => {
                        }`}>
                           {item.burnoutRisk} Risk
                        </span>
-                       {item.isEdited && (
+                       {(item.isEdited || item.isJournalEdited) && (
                           <div className="mt-1.5 flex items-center gap-1 text-[9px] font-extrabold text-primary uppercase tracking-[0.2em] bg-primary/5 px-2 py-0.5 rounded-full border border-primary/20">
                              <Clock size={10} /> Edited
                           </div>
@@ -239,7 +242,7 @@ const Reports = () => {
                        <div 
                          onClick={() => handleOpenJournal(item)}
                          className={`p-2 transition-colors cursor-pointer rounded-full hover:bg-slate-100 ${item.journalNote ? 'text-primary' : 'text-slate-300 group-hover:text-slate-400'}`}
-                         title={item.journalNote ? "Edit Journal" : "Add Journal Note"}
+                         title={item.journalNote ? "View Journal" : "Add Journal Note"}
                        >
                           <FileText size={18} />
                        </div>
@@ -270,38 +273,77 @@ const Reports = () => {
               <div className="p-3 bg-primary/10 text-primary rounded-xl font-bold">
                  <FileText size={24} />
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">Daily Journal</h3>
-                <p className="text-sm font-bold text-slate-500">{new Date(selectedLog.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
+                   <div>
+                      <h3 className="text-xl font-bold text-slate-900">Daily Journal</h3>
+                      <p className="text-sm font-bold text-slate-500">{new Date(selectedLog.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                   </div>
+                   {selectedLog.isJournalEdited && (
+                      <span className="text-[10px] font-black text-primary bg-primary/5 px-3 py-1 rounded-full uppercase tracking-widest border border-primary/20">Edited</span>
+                   )}
+                </div>
               </div>
             </div>
 
             <div className="mb-8">
-              <label className="block text-sm font-bold text-slate-700 mb-2">Reflect on this day</label>
-              <textarea
-                value={journalText}
-                onChange={(e) => setJournalText(e.target.value)}
-                placeholder="What went well? What caused stress? Add your context here..."
-                className="w-full h-32 p-4 border border-slate-200 rounded-2xl bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-              />
+              <div className="flex justify-between items-center mb-4">
+                 <label className="text-sm font-bold text-slate-700 uppercase tracking-widest">Day Reflection</label>
+                 {!isEditing && (
+                    <button 
+                      onClick={() => setIsEditing(true)}
+                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                    >
+                       Edit Note
+                    </button>
+                 )}
+              </div>
+              
+              {isEditing ? (
+                <textarea
+                  value={journalText}
+                  onChange={(e) => setJournalText(e.target.value)}
+                  placeholder="What went well? What caused stress? Add your context here..."
+                  className="w-full h-40 p-5 border border-slate-200 rounded-2xl bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none shadow-inner"
+                  autoFocus
+                />
+              ) : (
+                <div className="w-full min-h-[160px] p-6 border border-slate-100 rounded-2xl bg-slate-50/50 text-slate-700 leading-relaxed italic">
+                   {selectedLog.journalNote || "No reflections logged for this day yet."}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSaveJournal}
-                disabled={isSaving}
-                className="btn-primary px-8 py-3 flex items-center gap-2"
-              >
-                {isSaving ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : 'Save Note'}
-              </button>
+              {isEditing ? (
+                <>
+                  <button 
+                    onClick={() => {
+                      setIsEditing(false);
+                      setJournalText(selectedLog.journalNote || '');
+                    }}
+                    className="px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                  >
+                    Discard
+                  </button>
+                  <button 
+                    onClick={handleSaveJournal}
+                    disabled={isSaving}
+                    className="btn-primary px-8 py-3 flex items-center gap-2"
+                  >
+                    {isSaving ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : 'Save Changes'}
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="btn-primary px-10 py-3"
+                >
+                  Close
+                </button>
+              )}
             </div>
           </motion.div>
         </div>

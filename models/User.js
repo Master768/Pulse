@@ -43,6 +43,17 @@ const userSchema = new mongoose.Schema({
   onboardingComplete: {
     type: Boolean,
     default: false // Tracks if the user has finished the initial setup walkthrough
+  },
+  goalPersona: {
+    type: String,
+    default: 'Balanced Optimizer'
+  },
+  streakCount: {
+    type: Number,
+    default: 0
+  },
+  lastBalancedDate: {
+    type: Date
   }
 }, {
   timestamps: true, // Adds createdAt and updatedAt automatic fields

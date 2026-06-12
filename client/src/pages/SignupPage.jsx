@@ -43,13 +43,13 @@ const SignupPage = () => {
         <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white">
             
             {/* --- LEFT SIDE: VALUE PROPOSITION (Desktop Only) --- */}
-            <div className="hidden lg:flex flex-col justify-between bg-slate-900 p-20 relative overflow-hidden">
+            <div className="hidden lg:flex flex-col justify-between bg-white p-20 relative overflow-hidden">
                 <div className="relative z-10">
-                    <Link to="/" className="flex items-center gap-2 text-white mb-32">
+                    <Link to="/" className="flex items-center gap-2 text-slate-900 mb-32">
                         <Zap size={24} className="text-primary fill-current" />
                         <span className="text-2xl font-bold tracking-tight">PULSE.</span>
                     </Link>
-                    <h2 className="text-6xl font-bold text-white leading-tight mb-12">
+                    <h2 className="text-6xl font-bold text-slate-900 leading-tight mb-12">
                         Build your<br />productivity<br /><span className="text-primary">Masterclass.</span>
                     </h2>
                     
@@ -62,14 +62,14 @@ const SignupPage = () => {
                         ].map((text, i) => (
                            <div key={i} className="flex items-center gap-4">
                               <div className="p-1 bg-primary rounded-full text-white"><CheckCircle2 size={16} /></div>
-                              <span className="text-lg text-slate-300 font-medium">{text}</span>
+                              <span className="text-lg text-slate-600 font-medium">{text}</span>
                            </div>
                         ))}
                     </div>
                 </div>
                 
-                <p className="relative z-10 text-sm font-semibold text-slate-500">© 2026 Pulse Intelligence Systems.</p>
-                <div className="absolute -bottom-32 -left-32 w-96 h-96 opacity-30 bg-[radial-gradient(circle_at_center,#2563EB_0%,transparent_70%)]" />
+                <p className="relative z-10 text-sm font-semibold text-slate-400">© 2026 Pulse Intelligence Systems.</p>
+                <div className="absolute -bottom-32 -left-32 w-96 h-96 opacity-10 bg-[radial-gradient(circle_at_center,#2563EB_0%,transparent_70%)]" />
             </div>
 
             {/* --- RIGHT SIDE: SIGNUP FORM --- */}

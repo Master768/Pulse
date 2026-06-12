@@ -8,9 +8,13 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 
+import api from '../utils/api';
+import { useAuth } from './AuthContext';
+
 const TimerContext = createContext(null);
 
 export const TimerProvider = ({ children }) => {
+  const { user } = useAuth();
   // --- TIMER STATE ---
   const [isActive, setIsActive] = useState(false); // Is it currently counting?
   const [isPaused, setIsPaused] = useState(false); // Is it temporarily stopped?
@@ -54,6 +58,17 @@ export const TimerProvider = ({ children }) => {
   // --- CONTROL FUNCTIONS ---
 
   const startTimer = () => {
+    // --- PERSONA RESTRICTION ENGINE ---
+    // If the user is in a critical state, we enforce shorter sessions to prevent burnout.
+    let effectiveMinutes = targetMinutes;
+    if (user?.persona === 'Restricted Sleep' || user?.persona === 'Under Pressure') {
+      if (targetMinutes > 30) {
+        effectiveMinutes = 25; // Force Pomodoro standard
+        setTargetMinutes(25);
+        alert(`Burnout Prevention: Based on your ${user.persona} status, we've adjusted your session to 25 minutes to ensure recovery.`);
+      }
+    }
+
     if (!isActive) {
       setIsActive(true);
       setIsPaused(false);

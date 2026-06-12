@@ -106,9 +106,13 @@ const predictionSchema = new mongoose.Schema({
 
   // --- METADATA ---
 
-  isEdited: {
-    type: Boolean, // True if the log (and thus prediction) was updated today
+  isJournalEdited: {
+    type: Boolean,
     default: false
+  },
+  journalNote: {
+    type: String,
+    default: ""
   },
   date: {
     type: Date,
